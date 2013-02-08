@@ -1,0 +1,8 @@
+LoggedAction
+  tenantId Int
+  userId Int
+  entityName Text
+  entityId Int
+  action Int
+  at UTCTime default=now()
+
