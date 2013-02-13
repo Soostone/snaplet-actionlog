@@ -3,6 +3,6 @@ LoggedAction
   userId Int
   entityName Text
   entityId Int
-  action Int
+  action ActionType
   at UTCTime default=now()
 

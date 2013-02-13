@@ -1,15 +1,18 @@
-{-# LANGUAGE EmptyDataDecls    #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE GADTs             #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
-{-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE EmptyDataDecls            #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE GADTs                     #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE OverloadedStrings         #-}
+{-# LANGUAGE RecordWildCards           #-}
+{-# LANGUAGE TemplateHaskell           #-}
+{-# LANGUAGE TypeFamilies              #-}
 
 module Snap.Snaplet.ActionLog
   ( ActionLog
   , ActionType(..)
+  , HasActionLog(..)
   , LoggedAction
+
   -- Can't use (..) syntax...apparently because of TH generation
   , LoggedActionId
   , loggedActionTenantId
@@ -28,10 +31,13 @@ module Snap.Snaplet.ActionLog
   , loggedDelete
   , loggedDeleteKey
   , getActionLog
+  , loggedActionCSplices
+  , loggedActionISplices
 
   ) where
 
 ------------------------------------------------------------------------------
+import           Blaze.ByteString.Builder
 import           Data.Text (Text)
 import           Data.Time
 import           Database.Persist
@@ -39,9 +45,58 @@ import           Database.Persist.EntityDef
 import           Database.Persist.GenericSql.Raw
 import           Database.Persist.Query.Internal
 import           Database.Persist.Quasi
+import           Database.Persist.Store
 import           Database.Persist.TH          hiding (derivePersistField)
+import           Heist.Compiled
+import           Snap
+import           Snap.Restful
+import           Snap.Restful.TH
 import           Snap.Snaplet.Persistent
+import           Text.XmlHtml
 ------------------------------------------------------------------------------
+
+
+------------------------------------------------------------------------------
+-- | Enumeration of possible actions in the action log.
+data ActionType
+  = CreateAction
+  | UpdateAction
+  | DeleteAction
+  deriving (Ord, Eq, Enum)
+
+
+------------------------------------------------------------------------------
+-- | Converts an ActionType into an Int64 to be stored in the database.
+actionToInt :: ActionType -> Int
+actionToInt CreateAction = 0
+actionToInt UpdateAction = 1
+actionToInt DeleteAction = 2
+
+
+intToAction :: Int -> Either Text ActionType
+intToAction 0 = Right CreateAction
+intToAction 1 = Right UpdateAction
+intToAction 2 = Right DeleteAction
+intToAction _ = Left "int value is not a valid ActionType"
+
+
+instance Show ActionType where
+    show CreateAction = "Create"
+    show UpdateAction = "Update"
+    show DeleteAction = "Delete"
+
+
+instance PersistField ActionType where
+    toPersistValue = PersistInt64 . fromIntegral . actionToInt
+    fromPersistValue (PersistInt64 n) = intToAction $ fromIntegral n
+    fromPersistValue _ = Left "ActionType must be backed by a database int"
+    sqlType _ = SqlInt32
+    isNullable _ = False
+
+
+instance PrimSplice ActionType where
+    iPrimSplice = iPrimShow
+    cPrimSplice = cPrimShow
 
 
 ------------------------------------------------------------------------------
@@ -63,30 +118,27 @@ share [mkPersist sqlSettings, mkMigrate "migrateActionLog"]
       $(persistFileWith lowerCaseSettings "schema.txt")
 
 
-class (HasPersistPool m, PersistQuery m) => HasActionLog m where
-    getTenantId :: m Int
-    getAuthUserId :: m Int
-    getTime :: m UTCTime
+loggedActionCSplices :: [(Text, Entity LoggedAction -> Builder)]
+loggedActionCSplices = mapSnd (. entityVal) $(cSplices ''LoggedAction)
+
+loggedActionISplices :: [(Text, Entity LoggedAction -> [Node])]
+loggedActionISplices = mapSnd (. entityVal) $(iSplices ''LoggedAction)
+
+class (HasPersistPool m) => HasActionLog m where
+    alGetTenantId :: m Int
+    alGetAuthUserId :: m Int
+    alGetTime :: m UTCTime
 
 
-------------------------------------------------------------------------------
--- | Enumeration of possible actions in the action log.
-data ActionType
-  = CreateAction
-  | UpdateAction
-  | DeleteAction
-  deriving (Read, Show, Ord, Eq, Enum)
+data ActionLog = ActionLog
 
 
-data ActionLog
-
-
-------------------------------------------------------------------------------
--- | Converts an ActionType into an Int64 to be stored in the database.
-actionVal :: ActionType -> Int
-actionVal CreateAction = 0
-actionVal UpdateAction = 1
-actionVal DeleteAction = 2
+initActionLog :: SnapletInit ActionLog ActionLog
+initActionLog = makeSnaplet "actionlog" description datadir $ do
+    return ActionLog
+  where
+    description = "Snaplet providing generalized logging"
+    datadir = Nothing --Just $ liftM (++"/resources") getDataDir
 
 
 ------------------------------------------------------------------------------
@@ -97,11 +149,11 @@ logAction :: HasActionLog m
           -> ActionType
           -> m (Key LoggedAction)
 logAction entityName entityId action = do
-    tid <- getTenantId
-    uid <- getAuthUserId
-    now <- getTime
+    tid <- alGetTenantId
+    uid <- alGetAuthUserId
+    now <- alGetTime
     runPersist $ insert $
-      LoggedAction tid uid entityName entityId (actionVal action) now
+      LoggedAction tid uid entityName entityId action now
 
 
 ------------------------------------------------------------------------------
