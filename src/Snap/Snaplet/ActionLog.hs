@@ -22,6 +22,9 @@ module Snap.Snaplet.ActionLog
   , loggedActionAction
   , loggedActionAt
 
+  , loggedActionCSplices
+  , loggedActionISplices
+
   , actionLogEntityDefs
   , migrateActionLog
   , logAction
@@ -30,10 +33,9 @@ module Snap.Snaplet.ActionLog
   , loggedUpdate
   , loggedDelete
   , loggedDeleteKey
-  , getActionLog
-  , loggedActionCSplices
-  , loggedActionISplices
 
+  , getLoggedAction
+  , getAllActions
   ) where
 
 ------------------------------------------------------------------------------
@@ -66,13 +68,18 @@ data ActionType
 
 
 ------------------------------------------------------------------------------
--- | Converts an ActionType into an Int64 to be stored in the database.
+-- | Converts an ActionType into an Int to be stored in the database.  We
+-- don't want to use fromEnum here because that will make the numbers
+-- sensitive to the ordering of the data type and easier to screw up.
 actionToInt :: ActionType -> Int
 actionToInt CreateAction = 0
 actionToInt UpdateAction = 1
 actionToInt DeleteAction = 2
 
 
+------------------------------------------------------------------------------
+-- | Converts an Int into an ActionType.  Again, we want this to be explicit
+-- rather than implied by toEnum.
 intToAction :: Int -> Either Text ActionType
 intToAction 0 = Right CreateAction
 intToAction 1 = Right UpdateAction
@@ -80,12 +87,17 @@ intToAction 2 = Right DeleteAction
 intToAction _ = Left "int value is not a valid ActionType"
 
 
+------------------------------------------------------------------------------
+-- | Use human readable names for the Show instance.
 instance Show ActionType where
     show CreateAction = "Create"
     show UpdateAction = "Update"
     show DeleteAction = "Delete"
 
 
+------------------------------------------------------------------------------
+-- | We need to derive PersistField so ActionType can be a column in the
+-- LoggedAction table.
 instance PersistField ActionType where
     toPersistValue = PersistInt64 . fromIntegral . actionToInt
     fromPersistValue (PersistInt64 n) = intToAction $ fromIntegral n
@@ -94,6 +106,8 @@ instance PersistField ActionType where
     isNullable _ = False
 
 
+------------------------------------------------------------------------------
+-- | Create primitive splices using the show instance.
 instance PrimSplice ActionType where
     iPrimSplice = iPrimShow
     cPrimSplice = cPrimShow
@@ -121,8 +135,10 @@ share [mkPersist sqlSettings, mkMigrate "migrateActionLog"]
 loggedActionCSplices :: [(Text, Entity LoggedAction -> Builder)]
 loggedActionCSplices = mapSnd (. entityVal) $(cSplices ''LoggedAction)
 
+
 loggedActionISplices :: [(Text, Entity LoggedAction -> [Node])]
 loggedActionISplices = mapSnd (. entityVal) $(iSplices ''LoggedAction)
+
 
 class (HasPersistPool m) => HasActionLog m where
     alGetTenantId :: m Int
@@ -139,6 +155,11 @@ initActionLog = makeSnaplet "actionlog" description datadir $ do
   where
     description = "Snaplet providing generalized logging"
     datadir = Nothing --Just $ liftM (++"/resources") getDataDir
+
+
+------------------------------------------------------------------------------
+--                     Adding entries to the action log
+------------------------------------------------------------------------------
 
 
 ------------------------------------------------------------------------------
@@ -226,12 +247,36 @@ loggedDeleteKey key = do
 
 
 ------------------------------------------------------------------------------
+--                          Retrieving log entries
+------------------------------------------------------------------------------
+
+
+------------------------------------------------------------------------------
 -- | Gets the LoggedAction entry for the specified entity and id.
-getActionLog :: HasPersistPool m
-             => Text -> Int -> m (Maybe (Entity LoggedAction))
-getActionLog entityName entityId = runPersist $
+getLoggedAction :: HasPersistPool m
+                => Text -> Int -> m (Maybe (Entity LoggedAction))
+getLoggedAction entityName entityId = runPersist $
     selectFirst [ LoggedActionEntityName ==. entityName
                 , LoggedActionEntityId ==. entityId
                 ] []
+
+
+------------------------------------------------------------------------------
+-- | Gets all the actions in the action log.  In multi-tenant applications
+-- you probably want this to only be accessible by the administrator of the
+-- whole site.
+getAllActions :: HasPersistPool m => m [Entity LoggedAction]
+getAllActions = runPersist $ selectList [] []
+
+
+------------------------------------------------------------------------------
+-- | Gets all the logged actions for the current tenant.
+getTenantActions :: HasActionLog m
+                 => [Filter LoggedAction]
+                 -> [SelectOpt LoggedAction]
+                 -> m [Entity LoggedAction]
+getTenantActions filters opts = do
+    tid <- alGetTenantId
+    runPersist $ selectList ((LoggedActionTenantId ==. tid):filters) opts
 
 
