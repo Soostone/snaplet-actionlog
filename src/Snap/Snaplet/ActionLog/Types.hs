@@ -24,6 +24,41 @@ import           Text.XmlHtml
 
 
 ------------------------------------------------------------------------------
+-- | The list of entity definitions this snaplet exposes. You need
+-- them so that you can append to your application's list of
+-- entity definitions and perform the migration in one block.
+--
+-- See how this example combined an app's own entity definitions and
+-- the auth snaplet's in one migration block:
+--
+-- > share [mkMigrate "migrateAll"] $
+-- >    actionLogEntityDefs ++
+-- >    $(persistFileWith lowerCaseSettings "schema.txt")
+actionLogEntityDefs :: [EntityDef]
+actionLogEntityDefs = $(persistFileWith lowerCaseSettings "schema.txt")
+
+
+share [mkPersist sqlSettings, mkMigrate "migrateActionLog"]
+      $(persistFileWith lowerCaseSettings "schema.txt")
+
+
+loggedActionCSplices :: [(Text, Entity LoggedAction -> Builder)]
+loggedActionCSplices = mapSnd (. entityVal) $(cSplices ''LoggedAction)
+
+
+loggedActionISplices :: [(Text, Entity LoggedAction -> [Node])]
+loggedActionISplices = mapSnd (. entityVal) $(iSplices ''LoggedAction)
+
+
+class (HasPersistPool m) => HasActionLog m where
+    alGetTenantId :: m Int
+    alGetAuthUserId :: m Int
+    alGetTime :: m UTCTime
+    alGetName :: Int -> m Text
+    alCustomSplices :: [(Text, Promise (Entity LoggedAction) -> Splice m)]
+
+
+------------------------------------------------------------------------------
 -- | Enumeration of possible actions in the action log.
 data ActionType
   = CreateAction
@@ -76,38 +111,5 @@ instance PersistField ActionType where
 instance PrimSplice ActionType where
     iPrimSplice = iPrimShow
     cPrimSplice = cPrimShow
-
-
-------------------------------------------------------------------------------
--- | The list of entity definitions this snaplet exposes. You need
--- them so that you can append to your application's list of
--- entity definitions and perform the migration in one block.
---
--- See how this example combined an app's own entity definitions and
--- the auth snaplet's in one migration block:
---
--- > share [mkMigrate "migrateAll"] $
--- >    actionLogEntityDefs ++
--- >    $(persistFileWith lowerCaseSettings "schema.txt")
-actionLogEntityDefs :: [EntityDef]
-actionLogEntityDefs = $(persistFileWith lowerCaseSettings "schema.txt")
-
-
-share [mkPersist sqlSettings, mkMigrate "migrateActionLog"]
-      $(persistFileWith lowerCaseSettings "schema.txt")
-
-
-loggedActionCSplices :: [(Text, Entity LoggedAction -> Builder)]
-loggedActionCSplices = mapSnd (. entityVal) $(cSplices ''LoggedAction)
-
-
-loggedActionISplices :: [(Text, Entity LoggedAction -> [Node])]
-loggedActionISplices = mapSnd (. entityVal) $(iSplices ''LoggedAction)
-
-
-class (HasPersistPool m) => HasActionLog m where
-    alGetTenantId :: m Int
-    alGetAuthUserId :: m Int
-    alGetTime :: m UTCTime
 
 

@@ -16,6 +16,8 @@ extra-source-files:  LICENSE
 
 data-files:
   schema.txt
+  resources/templates/_index.tpl
+  resources/templates/_show.tpl
 
 source-repository head
   type:     git
@@ -28,13 +30,19 @@ Library
     Snap.Snaplet.ActionLog
 
   other-modules:
+    Snap.Snaplet.ActionLog.API
+    Snap.Snaplet.ActionLog.Resource
     Snap.Snaplet.ActionLog.Types
     Paths_snaplet_actionlog
 
   build-depends:
     base                       >= 4       && < 5,
     blaze-builder              >= 0.3     && < 0.4,
-    heist                      >= 0.11    && < 0.12,
+    bytestring                 >= 0.10    && < 0.11,
+    digestive-functors         >= 0.6     && < 0.7,
+    digestive-functors-heist   >= 0.6.1   && < 0.7,
+    digestive-functors-snap    >= 0.6     && < 0.7,
+    heist                      >= 0.11.1  && < 0.12,
     persistent                 >= 1.1     && < 1.2,
     persistent-postgresql      >= 1.1     && < 1.2,
     persistent-template        >= 1.1     && < 1.2,
