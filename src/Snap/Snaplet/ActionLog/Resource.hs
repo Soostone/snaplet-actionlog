@@ -6,6 +6,7 @@
 module Snap.Snaplet.ActionLog.Resource
   ( actionLogR
   , actionLogSplices
+  , actionLogISplice
   ) where
 
 ------------------------------------------------------------------------------
@@ -17,6 +18,7 @@ import qualified Data.Text                             as T
 import           Data.Text.Encoding
 import           Database.Persist
 import           Heist.Compiled
+import qualified Heist.Interpreted                     as I
 import           Snap
 import           Snap.Restful
 import           Snap.Snaplet.ActionLog.API
@@ -68,18 +70,16 @@ actionLogSplices =
 
 actionsSplice :: (HasActionLog n, MonadSnap n) => Splice n
 actionsSplice = manyWithSplices runChildren actionSplices $ do
-      (_,r) <- runLogFilterForm Nothing
-      let filters = case r of
-            Nothing -> []
-            Just lf -> mkFilters lf
-      getTenantActions filters []
+    (_,r) <- runLogFilterForm Nothing
+    let filters = case r of
+          Nothing -> []
+          Just lf -> mkFilters lf
+    getTenantActions filters []
 
 
 actionSplices :: HasActionLog n
               => [(Text, Promise (Entity LoggedAction) -> Splice n)]
-actionSplices =
-    pureSplices loggedActionCSplices ++
-    alCustomSplices
+actionSplices = pureSplices loggedActionCSplices ++ alCustomCSplices
 
 
 data LogFilter = LogFilter
@@ -140,4 +140,25 @@ logFilterFormSplice = do
     disable _ = do
         mp <- lift $ getParam "single"
         return $ if isJust mp then [("disabled","")] else []
+
+
+-------------------------------------------------------------------------------
+-- | Interpreted splice for an action log listing.
+actionLogISplice :: (HasActionLog n, MonadSnap n) => (Text, I.Splice n)
+actionLogISplice = ("actionLogListing", actionsISplice)
+
+
+actionsISplice :: (HasActionLog n, MonadSnap n) => I.Splice n
+actionsISplice = do
+    (_,r) <- lift $ runLogFilterForm Nothing
+    let filters = case r of
+          Nothing -> []
+          Just lf -> mkFilters lf
+    actions <- lift $ getTenantActions filters []
+    I.mapSplices (I.runChildrenWith . actionISplices) actions
+
+
+actionISplices :: HasActionLog n => Entity LoggedAction -> [(Text, I.Splice n)]
+actionISplices e = loggedActionISplices (entityVal e) ++ alCustomISplices e
+
 

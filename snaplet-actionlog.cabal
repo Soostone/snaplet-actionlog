@@ -38,7 +38,7 @@ Library
   build-depends:
     base                       >= 4       && < 5,
     blaze-builder              >= 0.3     && < 0.4,
-    bytestring                 >= 0.10    && < 0.11,
+    bytestring                 >= 0.9.1   && < 0.11,
     digestive-functors         >= 0.6     && < 0.7,
     digestive-functors-heist   >= 0.6.1   && < 0.7,
     digestive-functors-snap    >= 0.6     && < 0.7,

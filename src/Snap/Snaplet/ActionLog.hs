@@ -48,8 +48,9 @@ data ActionLog = ActionLog
 initActionLog :: (HasActionLog (Handler b b), HasHeist b)
               => Snaplet (Heist b) -> SnapletInit b ActionLog
 initActionLog heist = makeSnaplet "actionlog" description datadir $ do
-    -- FIXME Need to add interpreted splices
-    addConfig heist $ mempty { hcCompiledSplices = actionLogSplices }
+    addConfig heist $ mempty { hcCompiledSplices = actionLogSplices
+                             , hcInterpretedSplices = [actionLogISplice]
+                             }
     addTemplates heist "actionlog"
     addRoutes (resourceRoutes actionLogR)
     return ActionLog

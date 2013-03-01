@@ -16,10 +16,10 @@ import           Database.Persist.Quasi
 import           Database.Persist.Store
 import           Database.Persist.TH          hiding (derivePersistField)
 import           Heist.Compiled
+import qualified Heist.Interpreted            as I
 import           Snap.Restful
 import           Snap.Restful.TH
 import           Snap.Snaplet.Persistent
-import           Text.XmlHtml
 ------------------------------------------------------------------------------
 
 
@@ -46,16 +46,21 @@ loggedActionCSplices :: [(Text, Entity LoggedAction -> Builder)]
 loggedActionCSplices = mapSnd (. entityVal) $(cSplices ''LoggedAction)
 
 
-loggedActionISplices :: [(Text, Entity LoggedAction -> [Node])]
-loggedActionISplices = mapSnd (. entityVal) $(iSplices ''LoggedAction)
+loggedActionISplices :: Monad m => LoggedAction -> [(Text, I.Splice m)]
+loggedActionISplices = $(iSplices ''LoggedAction)
 
 
+------------------------------------------------------------------------------
+-- | Type class that must be implemented to have an action log.  You do not
+-- have to implement both splice functions.  If you only use interpreted mode,
+-- you can just use error as the implementation af alCustomCSplices
 class (HasPersistPool m) => HasActionLog m where
     alGetTenantId :: m Int
     alGetAuthUserId :: m Int
     alGetTime :: m UTCTime
     alGetName :: Int -> m Text
-    alCustomSplices :: [(Text, Promise (Entity LoggedAction) -> Splice m)]
+    alCustomCSplices :: [(Text, Promise (Entity LoggedAction) -> Splice m)]
+    alCustomISplices :: Entity LoggedAction -> [(Text, I.Splice m)]
 
 
 ------------------------------------------------------------------------------
