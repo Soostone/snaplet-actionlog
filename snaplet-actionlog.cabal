@@ -47,7 +47,7 @@ Library
     persistent-postgresql      >= 1.1     && < 1.2,
     persistent-template        >= 1.1     && < 1.2,
     restful-snap               >= 0.1     && < 0.2,
-    snap                       >= 0.11    && < 0.12,
+    snap                       >= 0.11.3  && < 0.12,
     text                       >= 0.11    && < 0.12,
     time                       >= 1.1     && < 1.5,
     snaplet-persistent         >= 0.1     && < 0.2,

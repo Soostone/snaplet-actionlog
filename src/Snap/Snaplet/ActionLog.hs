@@ -49,7 +49,7 @@ initActionLog :: (HasActionLog (Handler b b), HasHeist b)
               => Snaplet (Heist b) -> SnapletInit b ActionLog
 initActionLog heist = makeSnaplet "actionlog" description datadir $ do
     addConfig heist $ mempty { hcCompiledSplices = actionLogSplices
-                             , hcInterpretedSplices = [actionLogISplice]
+                             , hcInterpretedSplices = actionLogISplices
                              }
     addTemplates heist "actionlog"
     addRoutes (resourceRoutes actionLogR)
