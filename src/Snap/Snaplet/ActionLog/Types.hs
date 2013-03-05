@@ -58,8 +58,8 @@ loggedActionISplices = $(iSplices ''LoggedAction)
 --
 -- One potential use for the custom splices might be if you want to display
 -- your own custom information in action log lists.  Maybe you want to display
--- a user email address in addition to ther name, or maybe instead of
--- displaying raw entity IDs, you want to do some query to get a different
+-- a user email address in addition to their name, or maybe instead of
+-- displaying raw entity IDs you want to do some DB query to get a different
 -- field for display.  The custom splices allow you to make any runtime
 -- function of a LoggedAction into a splice that can be displayed in action
 -- log templates.
@@ -71,7 +71,7 @@ class (HasPersistPool m) => HasActionLog m where
     alGetTenantId :: m Int
 
     -- | Gets the current user's user ID.  Again, if your application does not
-    -- have the concept of a user, then you can return a constant.
+    -- have the concept of a user, you can return a constant.
     alGetAuthUserId :: m Int
 
     -- | In latency sensitive applications where time stamps are used
