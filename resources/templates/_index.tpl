@@ -55,7 +55,7 @@
           <tr>
 <!--            <td><a href="${actionlogItemShowPath}"><loggedActionAt/></a></td> -->
             <td><loggedActionAt/></td>
-            <td><loggedActionUserId/></td>
+            <td><loggedActionUserName/></td>
             <td><loggedActionEntityName/></td>
             <td><loggedActionEntityId/></td>
             <td><loggedActionAction/></td>
