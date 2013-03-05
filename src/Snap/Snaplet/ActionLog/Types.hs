@@ -52,8 +52,9 @@ loggedActionISplices = $(iSplices ''LoggedAction)
 
 ------------------------------------------------------------------------------
 -- | Type class that must be implemented to have an action log.  You do not
--- have to implement both splice functions.  If you only use interpreted mode,
--- you can just use error as the implementation af alCustomCSplices.
+-- have to have any custom splices.  If you don't need to add splices to what
+-- the snaplet provides by default, just have the custom splice functions
+-- return an empty list.
 --
 -- One potential use for the custom splices might be if you want to display
 -- your own custom information in action log lists.  Maybe you want to display
@@ -62,7 +63,6 @@ loggedActionISplices = $(iSplices ''LoggedAction)
 -- field for display.  The custom splices allow you to make any runtime
 -- function of a LoggedAction into a splice that can be displayed in action
 -- log templates.
-
 class (HasPersistPool m) => HasActionLog m where
 
     -- | Gets a tenant ID for the current user of your application.  If your
