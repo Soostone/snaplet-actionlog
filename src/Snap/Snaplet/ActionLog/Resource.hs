@@ -10,6 +10,8 @@ module Snap.Snaplet.ActionLog.Resource
   ) where
 
 ------------------------------------------------------------------------------
+import           Blaze.ByteString.Builder
+import           Blaze.ByteString.Builder.Char8
 import           Data.ByteString                       (ByteString)
 import qualified Data.ByteString                       as B
 import           Data.Maybe
@@ -51,6 +53,7 @@ showH :: HasHeist b => Handler b v ()
 showH = gRender (tDir "_show")
 
 -------------------------------------------------------------------------------
+-- | A restful-snap resource for the action log CRUD.
 actionLogR :: HasHeist b => Resource b v ()
 actionLogR = Resource {
            rName = resourceName
@@ -81,7 +84,17 @@ actionsSplice = manyWithSplices runChildren actionSplices $ do
 
 actionSplices :: HasActionLog n
               => [(Text, Promise (Entity LoggedAction) -> Splice n)]
-actionSplices = pureSplices loggedActionCSplices ++ alCustomCSplices
+actionSplices = userNameSplice :
+    (pureSplices loggedActionCSplices ++ alCustomCSplices)
+  where
+    userNameSplice = ("loggedActionUserName", runtimeToPromise getName)
+    getName = return . fromText <=< alGetName . loggedActionUserId . entityVal
+
+
+runtimeToPromise :: (Monad n) => (t -> n Builder) -> Promise t -> Splice n
+runtimeToPromise f p = return $ yieldRuntime $ do
+    entity <- getPromise p
+    lift $ f entity
 
 
 data LogFilter = LogFilter
@@ -149,7 +162,6 @@ logFilterFormISplice :: (HasActionLog m, MonadSnap m) => I.Splice m
 logFilterFormISplice = do
     let as = [("disableonsingle", disable)]
     (v,_) <- lift $ runLogFilterForm Nothing
-    node <- getParamNode
     localHS (DHI.bindDigestiveSplices v . I.bindAttributeSplices as)
             (DHI.dfForm v >>= I.runNodeList)
   where
@@ -178,6 +190,10 @@ actionsISplice = do
 
 
 actionISplices :: HasActionLog n => Entity LoggedAction -> [(Text, I.Splice n)]
-actionISplices e = loggedActionISplices (entityVal e) ++ alCustomISplices e
+actionISplices e = userNameSplice :
+    (loggedActionISplices (entityVal e) ++ alCustomISplices e)
+  where
+    userNameSplice = ("loggedActionUserName", I.textSplice =<< getName)
+    getName = lift $ alGetName $ loggedActionUserId $ entityVal e
 
 

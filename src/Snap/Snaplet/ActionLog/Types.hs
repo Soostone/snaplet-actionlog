@@ -24,12 +24,12 @@ import           Snap.Snaplet.Persistent
 
 
 ------------------------------------------------------------------------------
--- | The list of entity definitions this snaplet exposes. You need
--- them so that you can append to your application's list of
--- entity definitions and perform the migration in one block.
+-- | The list of entity definitions this snaplet exposes. You need them so
+-- that you can append to your application's list of entity definitions and
+-- perform the migration in one block.
 --
--- See how this example combined an app's own entity definitions and
--- the auth snaplet's in one migration block:
+-- Here's an example of how to combine your app's own entity definitions and
+-- the action log's in one migration block:
 --
 -- > share [mkMigrate "migrateAll"] $
 -- >    actionLogEntityDefs ++
@@ -53,13 +53,45 @@ loggedActionISplices = $(iSplices ''LoggedAction)
 ------------------------------------------------------------------------------
 -- | Type class that must be implemented to have an action log.  You do not
 -- have to implement both splice functions.  If you only use interpreted mode,
--- you can just use error as the implementation af alCustomCSplices
+-- you can just use error as the implementation af alCustomCSplices.
+--
+-- One potential use for the custom splices might be if you want to display
+-- your own custom information in action log lists.  Maybe you want to display
+-- a user email address in addition to ther name, or maybe instead of
+-- displaying raw entity IDs, you want to do some query to get a different
+-- field for display.  The custom splices allow you to make any runtime
+-- function of a LoggedAction into a splice that can be displayed in action
+-- log templates.
+
 class (HasPersistPool m) => HasActionLog m where
+
+    -- | Gets a tenant ID for the current user of your application.  If your
+    -- application is not multi-tenanted, then you can just return a constant
+    -- here.
     alGetTenantId :: m Int
+
+    -- | Gets the current user's user ID.  Again, if your application does not
+    -- have the concept of a user, then you can return a constant.
     alGetAuthUserId :: m Int
+
+    -- | In latency sensitive applications where time stamps are used
+    -- frequently, you may want to do the system call once and then cache the
+    -- results.  This function allows you to provide your own cache-aware
+    -- version of getTime if you choose.  Otherwise you can just lift the
+    -- getCurrentTime function from Data.Time.Clock into your monad.
     alGetTime :: m UTCTime
+
+    -- | Function that takes a user ID and returns the user's name, email, or
+    -- whatever you want the snaplet to call that user.  This function is used
+    -- to generate the user dropdown box in action log filter controls.
     alGetName :: Int -> m Text
+
+    -- | Complied version of any custom splices that you want to be available
+    -- inside the @actionLogListing@ splice.
     alCustomCSplices :: [(Text, Promise (Entity LoggedAction) -> Splice m)]
+
+    -- | Interpreted version of any custom splices that you want to be
+    -- available inside the @actionLogListing@ splice.
     alCustomISplices :: Entity LoggedAction -> [(Text, I.Splice m)]
 
 

@@ -24,11 +24,18 @@ import           Snap.Snaplet.ActionLog.Types
 
 
 ------------------------------------------------------------------------------
--- | Logs an action.
+-- | Low level function for logging an action.  Usually you will want to use
+-- one of the other functions like 'loggedInsert'.  But when those aren't
+-- sufficient, this function provides you maximum control to log actions as
+-- you see fit.
 logAction :: HasActionLog m
           => Text
+              -- ^ Entity name.  If you are logging database modifications,
+              -- then this might be the name of the table being operated on.
           -> Int
+              -- ^ Entity ID.  This is the primary key for the affected row.
           -> ActionType
+              -- ^ Type of action, such as create, update, or delete.
           -> m (Key LoggedAction)
 logAction entityName entityId action = do
     tid <- alGetTenantId
