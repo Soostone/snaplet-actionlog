@@ -76,8 +76,8 @@ initActionLog heist = makeSnaplet "actionlog" description datadir $ do
       [(RIndex, indexH), (RShow, showH)] [] [] heist
 
     addConfig heist $ mempty
-      { hcCompiledSplices = actionLogSplices
-      , hcInterpretedSplices = actionLogISplices
+      { hcCompiledSplices = actionLogSplices resource
+      , hcInterpretedSplices = actionLogISplices resource
 
       -- Load time splices are for splices that can be used in the apply and
       -- bind tags.
