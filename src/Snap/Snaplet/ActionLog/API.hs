@@ -122,11 +122,18 @@ loggedDeleteKey key = do
 ------------------------------------------------------------------------------
 -- | Gets the LoggedAction entry for the specified entity and id.
 getLoggedAction :: HasPersistPool m
-                => Text -> Int -> m (Maybe (Entity LoggedAction))
-getLoggedAction entityName entityId = runPersist $
-    selectFirst [ LoggedActionEntityName ==. entityName
-                , LoggedActionEntityId ==. entityId
-                ] []
+                => LoggedActionId -> m (Maybe LoggedAction)
+getLoggedAction actionId = runPersist $ get actionId
+
+
+------------------------------------------------------------------------------
+-- | Gets the LoggedAction entry for the specified entity and id.
+getEntityActions :: HasPersistPool m
+                 => Text -> Int -> m [Entity LoggedAction]
+getEntityActions entityName entityId = runPersist $
+    selectList [ LoggedActionEntityName ==. entityName
+               , LoggedActionEntityId ==. entityId
+               ] []
 
 
 ------------------------------------------------------------------------------

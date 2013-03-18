@@ -16,8 +16,11 @@ extra-source-files:  LICENSE
 
 data-files:
   schema.txt
-  resources/templates/_index.tpl
-  resources/templates/_show.tpl
+  resources/templates/index.tpl
+  resources/templates/show.tpl
+  resources/templates/_details.tpl
+  resources/templates/_form.tpl
+  resources/templates/_list.tpl
 
 source-repository head
   type:     git
@@ -42,15 +45,19 @@ Library
     digestive-functors         >= 0.6     && < 0.7,
     digestive-functors-heist   >= 0.6.1   && < 0.7,
     digestive-functors-snap    >= 0.6     && < 0.7,
+    errors                     >= 1.4.1   && < 1.5,
     heist                      >= 0.11.1  && < 0.12,
     persistent                 >= 1.1     && < 1.2,
     persistent-postgresql      >= 1.1     && < 1.2,
     persistent-template        >= 1.1     && < 1.2,
+    readable                   >= 0.1     && < 0.2,
     restful-snap               >= 0.1     && < 0.2,
     snap                       >= 0.11.3  && < 0.12,
+    snap-extras                >= 0.4     && < 0.6,
+    snaplet-persistent         >= 0.1     && < 0.2,
     text                       >= 0.11    && < 0.12,
     time                       >= 1.1     && < 1.5,
-    snaplet-persistent         >= 0.1     && < 0.2,
+    transformers               >= 0.3     && < 0.4,
     unordered-containers       >= 0.2     && < 0.3,
     xmlhtml                    >= 0.2     && < 0.3
 

@@ -4,6 +4,7 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE RecordWildCards           #-}
+{-# LANGUAGE ScopedTypeVariables       #-}
 {-# LANGUAGE TemplateHaskell           #-}
 {-# LANGUAGE TypeFamilies              #-}
 
@@ -18,6 +19,7 @@ module Snap.Snaplet.ActionLog
 
   -- * Retrieving actions
   , getLoggedAction
+  , getEntityActions
   , getAllActions
   , getTenantActions
   , getTenantEntities
@@ -34,16 +36,21 @@ module Snap.Snaplet.ActionLog
 
   -- * Types
   , actionLogEntityDefs
+  , migrateActionLog
   , LoggedActionGeneric(..)
   , LoggedAction
   , LoggedActionId
-  , migrateActionLog
+  , LoggedActionDetailsGeneric(..)
+  , LoggedActionDetails
+  , LoggedActionDetailsId
 
   ) where
 
 ------------------------------------------------------------------------------
 import           Data.Monoid
+import           Data.Text.Encoding
 import           Heist
+import qualified Heist.Interpreted                     as I
 import           Snap
 import           Snap.Restful
 import           Snap.Snaplet.Heist.Compiled
@@ -55,11 +62,6 @@ import           Paths_snaplet_actionlog
 
 
 ------------------------------------------------------------------------------
--- | Opaque data type holding any state needed by the action log snaplet.
-data ActionLog = ActionLog
-
-
-------------------------------------------------------------------------------
 -- | Initializer for the action log snaplet.  It sets up templates, routes,
 -- and compiled and interpreted splices.
 --
@@ -68,11 +70,22 @@ data ActionLog = ActionLog
 initActionLog :: (HasActionLog (Handler b b), HasHeist b)
               => Snaplet (Heist b) -> SnapletInit b ActionLog
 initActionLog heist = makeSnaplet "actionlog" description datadir $ do
-    addConfig heist $ mempty { hcCompiledSplices = actionLogSplices
-                             , hcInterpretedSplices = actionLogISplices
-                             }
-    addTemplates heist "actionlog"
-    addRoutes (resourceRoutes actionLogR)
+    url <- getSnapletRootURL
+    let resource = actionLogR { rRoot = decodeUtf8 url }
+    addResourceRelative resource
+      [(RIndex, indexH), (RShow, showH)] [] [] heist
+
+    addConfig heist $ mempty
+      { hcCompiledSplices = actionLogSplices
+      , hcInterpretedSplices = actionLogISplices
+
+      -- Load time splices are for splices that can be used in the apply and
+      -- bind tags.
+      , hcLoadTimeSplices =
+          [ ("actionlogTemplate", I.textSplice $ decodeUtf8 url)
+          ]
+      }
+    addTemplates heist ""
     return ActionLog
   where
     description = "Snaplet providing generalized logging"

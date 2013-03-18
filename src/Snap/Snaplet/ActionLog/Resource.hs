@@ -5,6 +5,8 @@
 
 module Snap.Snaplet.ActionLog.Resource
   ( actionLogR
+  , indexH
+  , showH
   , actionLogSplices
   , actionLogISplices
   ) where
@@ -12,9 +14,11 @@ module Snap.Snaplet.ActionLog.Resource
 ------------------------------------------------------------------------------
 import           Blaze.ByteString.Builder
 import           Blaze.ByteString.Builder.Char8
+import           Control.Error
 import           Data.ByteString                       (ByteString)
-import qualified Data.ByteString                       as B
-import           Data.Maybe
+import qualified Data.ByteString.Char8                 as B
+import           Data.Monoid
+import qualified Data.Readable                         as R
 import           Data.Text (Text)
 import qualified Data.Text                             as T
 import           Data.Text.Encoding
@@ -23,69 +27,188 @@ import           Heist
 import           Heist.Compiled
 import qualified Heist.Interpreted                     as I
 import           Snap
+import           Snap.Extras.CoreUtils
 import           Snap.Restful
 import           Snap.Snaplet.ActionLog.API
 import           Snap.Snaplet.ActionLog.Types
 import           Snap.Snaplet.Heist.Generic
+import           Snap.Snaplet.Persistent
 import           Text.Digestive
 import qualified Text.Digestive                        as Form
 import qualified Text.Digestive.Heist                  as DHI
 import           Text.Digestive.Heist.Compiled
 import           Text.Digestive.Snap                   hiding (method)
 import qualified Text.Digestive.Snap                   as Form
+import           Text.Printf
+import qualified Text.XmlHtml                          as X
 ------------------------------------------------------------------------------
 
 
-resourceName :: Text
-resourceName = "actionlog"
-
-resourceUrl :: Text
-resourceUrl = "actionlog"
-
-tDir :: ByteString -> ByteString
-tDir n = B.concat [encodeUtf8 $ resourceUrl, "/", n]
+snapletRender :: HasHeist b => ByteString -> Handler b v ()
+snapletRender name = do
+    root <- getSnapletRootURL
+    let p = B.intercalate "/" $ filter (not . B.null) [root, name]
+    gRender p
 
 
 indexH :: HasHeist b => Handler b v ()
-indexH = gRender (tDir "_index")
+indexH = snapletRender "index"
+
 
 showH :: HasHeist b => Handler b v ()
-showH = gRender (tDir "_show")
+showH = snapletRender "show"
+
 
 -------------------------------------------------------------------------------
 -- | A restful-snap resource for the action log CRUD.
-actionLogR :: HasHeist b => Resource b v ()
-actionLogR = Resource {
-           rName = resourceName
-         , rRoot = resourceUrl
-         , rHandlers = [ (RIndex, indexH)
-                       , (RShow, showH) ]
-         , rResourceActions = []
-         , rItemActions = []
-         }
+actionLogR :: Resource
+actionLogR = Resource
+    { rName = "actionlog"
+    , rRoot = ""
+    , rResourceEndpoints = []
+    , rItemEndpoints = []
+    }
+
+
+data LogFilter = LogFilter
+    { filterUser     :: Maybe Int
+    , filterEntity   :: Maybe Text
+    , filterEntityId :: Maybe Int
+    , filterAction   :: Maybe ActionType
+    } deriving (Show)
+
+
+instance Monoid LogFilter where
+    mempty = LogFilter Nothing Nothing Nothing Nothing
+    mappend (LogFilter u1 e1 i1 a1) (LogFilter u2 e2 i2 a2) =
+      LogFilter (getFirst $ mappend (First u1) (First u2))
+                (getFirst $ mappend (First e1) (First e2))
+                (getFirst $ mappend (First i1) (First i2))
+                (getFirst $ mappend (First a1) (First a2))
+
+
+mkFilters :: LogFilter -> [Filter LoggedAction]
+mkFilters (LogFilter u e eid a) =
+    maybe [] (\x -> [LoggedActionUserId ==. x]) u ++
+    maybe [] (\x -> [LoggedActionEntityName ==. x]) e ++
+    maybe [] (\x -> [LoggedActionEntityId ==. x]) eid ++
+    maybe [] (\x -> [LoggedActionAction ==. x]) a
+
+
+disableOnJust :: (Maybe a -> Form v m b) -> Maybe a -> Form v m b
+disableOnJust f Nothing = f Nothing
+disableOnJust f def = disable $ f def
+
+
+------------------------------------------------------------------------------
+-- | 
+logFilterForm :: HasActionLog m
+              => Bool
+              -> Maybe LogFilter -> Form Text m LogFilter
+logFilterForm isDisabling d = monadic $ do
+    entities <- getTenantEntities
+    let entityPairs = noFilter : map (\x -> (Just x,x)) entities
+    uids <- getTenantUids
+    names <- mapM alGetName uids
+    let userPairs = noFilter : (map firstJust $ zip uids names)
+    return $ LogFilter
+      <$> "user"      .: choice userPairs ?$ (filterUser <$> d)
+      <*> "entity"    .: choice entityPairs ?$ (filterEntity <$> d)
+      <*> "entity-id" .: optionalStringRead "id must be an int" ?$
+                                            (filterEntityId =<< d)
+      <*> "action"    .: choice actions ?$ (filterAction <$> d)
+  where
+    noFilter = (Nothing, "Any")
+    firstJust (k,u) = (Just k, u)
+    actions = noFilter : map (\x -> (Just x,T.pack $ show x)) [minBound..maxBound]
+    -- An infix function here makes the syntax nice
+    infixr 6 ?$
+    (?$) :: (Maybe a -> Form v m b) -> Maybe a -> Form v m b
+    (?$) = if isDisabling then disableOnJust else ($)
+
+
+
+logFilterFormName :: Text
+logFilterFormName = "log-filter-form"
+
+
+-------------------------------------------------------------------------------
+runLogFilterForm :: (HasActionLog m, MonadSnap m)
+                 => Bool -> Maybe LogFilter -> m (View Text, Maybe LogFilter)
+runLogFilterForm isDisabling def =
+    runFormWith cfg logFilterFormName (logFilterForm isDisabling def)
+  where
+    cfg = defaultSnapFormConfig { Form.method = Just Form.Post }
+
+
+-------------------------------------------------------------------------------
+--                                 Splices
+-------------------------------------------------------------------------------
 
 
 -------------------------------------------------------------------------------
 actionLogSplices :: (HasActionLog n, MonadSnap n) => [(Text, Splice n)]
 actionLogSplices =
-    [ ("actionLogListing", actionsSplice)
-    , ("actionLogFilterForm", logFilterFormSplice)
+    [ ("actionDetails", actionViewSplice)
+    , ("defaultActions", defaultActionsSplice) 
+    ]
+    ++ coupledSplices False mempty
+
+
+coupledSplices :: (HasActionLog n, MonadSnap n)
+               => Bool -> LogFilter -> [(Text, Splice n)]
+coupledSplices b f =
+    [ ("actionLogListing", actionsSplice (runLogFilterForm b) f)
+    , ("actionLogFilterForm", logFilterFormSplice (runLogFilterForm b) f)
     ]
 
 
-actionsSplice :: (HasActionLog n, MonadSnap n) => Splice n
-actionsSplice = manyWithSplices runChildren actionSplices $ do
-    (_,r) <- runLogFilterForm Nothing
+------------------------------------------------------------------------------
+-- | This is a splice that wraps both the action log filter form splice and
+-- the listing splice.  It handles greying out the appropriate form fields and
+-- limiting the things in the listing.
+defaultActionsSplice :: (MonadSnap m, HasActionLog m) => Splice m
+defaultActionsSplice = do
+    f <- defaultActionsCommon
+    withLocalSplices (coupledSplices True f) [] runChildren
+
+
+actionFromId :: (MonadSnap m, HasPersistPool m)
+             => m (Maybe (Entity LoggedAction))
+actionFromId = runMaybeT $ do
+    idBS <- MaybeT $ getParam "id"
+    _id <- R.fromBS idBS
+    let key = mkKey _id
+    action <- MaybeT $ getLoggedAction key
+    return $ Entity key action
+
+
+actionViewSplice :: (HasActionLog n, MonadSnap n) => Splice n
+actionViewSplice = manyWithSplices runChildren actionSplices $ do
+    ma <- actionFromId
+    return $ maybe [] (:[]) ma
+
+
+actionsSplice :: HasActionLog n
+              => (Maybe a -> n (t, Maybe LogFilter))
+              -> LogFilter
+              -> Splice n
+actionsSplice form f = manyWithSplices runChildren actionSplices $ do
+    (_,r) <- form Nothing
     let filters = case r of
           Nothing -> []
-          Just lf -> mkFilters lf
+          Just lf -> mkFilters (f `mappend` lf)
     getTenantActions filters []
 
 
 actionSplices :: HasActionLog n
               => [(Text, Promise (Entity LoggedAction) -> Splice n)]
 actionSplices = userNameSplice :
-    (pureSplices loggedActionCSplices ++ alCustomCSplices)
+    (pureSplices loggedActionCSplices ++
+     alCustomCSplices
+--     repromise (return . DBId . mkWord64 . entityKey)
+--               (pureSplices $ textSplices $ itemCSplices actionLogR)
+    )
   where
     userNameSplice = ("loggedActionUserName", runtimeToPromise getName)
     getName = return . fromText <=< alGetName . loggedActionUserId . entityVal
@@ -97,103 +220,133 @@ runtimeToPromise f p = return $ yieldRuntime $ do
     lift $ f entity
 
 
-data LogFilter = LogFilter
-    { filterUser     :: Maybe Int
-    , filterEntity   :: Maybe Text
-    , filterEntityId :: Maybe Int
-    , filterAction   :: Maybe ActionType
-    } deriving (Show)
-
-
-mkFilters :: LogFilter -> [Filter LoggedAction]
-mkFilters (LogFilter u e eid a) =
-    maybe [] (\x -> [LoggedActionUserId ==. x]) u ++
-    maybe [] (\x -> [LoggedActionEntityName ==. x]) e ++
-    maybe [] (\x -> [LoggedActionEntityId ==. x]) eid ++
-    maybe [] (\x -> [LoggedActionAction ==. x]) a
-
-
-------------------------------------------------------------------------------
--- | 
-logFilterForm :: HasActionLog m => Maybe LogFilter -> Form Text m LogFilter
-logFilterForm d = monadic $ do
-    entities <- getTenantEntities
-    let entityPairs = noFilter : map (\x -> (Just x,x)) entities
-    uids <- getTenantUids
-    names <- mapM alGetName uids
-    let userPairs = noFilter : (map firstJust $ zip uids names)
-    return $ LogFilter
-      <$> "user"      .: choice userPairs (filterUser <$> d)
-      <*> "entity"    .: choice entityPairs (filterEntity <$> d)
-      <*> "entity-id" .: optionalStringRead "id must be an int"
-                                            (filterEntityId =<< d)
-      <*> "action"    .: choice actions (filterAction <$> d)
-  where
-    noFilter = (Nothing, "Any")
-    firstJust (k,u) = (Just k, u)
-    actions = noFilter : map (\x -> (Just x,T.pack $ show x)) [minBound..maxBound]
-
-
-logFilterFormName :: Text
-logFilterFormName = "log-filter-form"
+-------------------------------------------------------------------------------
+logFilterFormSplice :: Monad m
+                    => (Maybe a -> m (View Text, b))
+                    -> a
+                    -> Splice m
+logFilterFormSplice form f =
+    formSplice' [] [] $ liftM fst $ form (Just f)
 
 
 -------------------------------------------------------------------------------
-runLogFilterForm :: (HasActionLog m, MonadSnap m)
-                 => Maybe LogFilter -> m (View Text, Maybe LogFilter)
-runLogFilterForm def = runFormWith cfg logFilterFormName (logFilterForm def)
-  where
-    cfg = defaultSnapFormConfig { Form.method = Just Form.Post }
+--                               Interpreted
+-------------------------------------------------------------------------------
 
 
 -------------------------------------------------------------------------------
-logFilterFormSplice :: (HasActionLog m, MonadSnap m) => Splice m
-logFilterFormSplice = do
-    formSplice' [] [("disableonsingle", disable)] $
-      liftM fst $ runLogFilterForm Nothing
-  where
-    disable _ = do
-        mp <- lift $ getParam "single"
-        return $ if isJust mp then [("disabled","")] else []
+logFilterFormISplice :: MonadIO m
+                     => (Maybe a -> m (View Text, t))
+                     -> a -> HeistT m m Template
+logFilterFormISplice form f = do
+    (v,_) <- lift $ form (Just f)
+    localHS (DHI.bindDigestiveSplices v) (DHI.dfForm v >>= I.runNodeList)
 
 
--------------------------------------------------------------------------------
-logFilterFormISplice :: (HasActionLog m, MonadSnap m) => I.Splice m
-logFilterFormISplice = do
-    let as = [("disableonsingle", disable)]
-    (v,_) <- lift $ runLogFilterForm Nothing
-    localHS (DHI.bindDigestiveSplices v . I.bindAttributeSplices as)
-            (DHI.dfForm v >>= I.runNodeList)
-  where
-    disable _ = do
-        mp <- lift $ getParam "single"
-        return $ if isJust mp then [("disabled","")] else []
+--crudUrlISplice :: MonadSnap m => ByteString -> CRUD -> HeistT n m Template
+--crudUrlISplice root crud =
+--    I.textSplice . decodeUtf8 . (root -/-) =<< go crud
+--  where
+--    go RIndex = return ""
+--    go RCreate = return ""
+--    go RShow = (getParam "id") >>= maybe (go RIndex) return
+--    go RNew = return "new"
+--    go REdit = (getParam "id") >>= maybe (go RIndex) (return . (-/- "edit"))
+--    go RUpdate = (getParam "id") >>= maybe (go RIndex) return
+--    go RDestroy =
+--        (getParam "id") >>= maybe (go RIndex) (return . (-/- "/destroy"))
+--
+--
+--viewLinkISplice :: MonadSnap m => ByteString -> I.Splice m
+--viewLinkISplice root = do
+--    n <- getParamNode
+--    case X.getAttribute "entity" n of
+--      Nothing -> return []
+--      Just e -> do
+--          mid <- lift $ getParam "id"
+--          case mid of
+--            Nothing -> return []
+--            Just _id -> do
+--              let page = printf "%s?%s&%s" (kv "entity" e)
+--                                           (kv "entity-id" (decodeUtf8 _id))
+--                  url = root -/- encodeUtf8 (T.pack page)
+--              I.runChildrenWithText [("linkUrl", decodeUtf8 url)]
+--  where
+--    kv :: Text -> Text -> String
+--    kv k v = printf "%s.%s=%s" (T.unpack logFilterFormName)
+--                               (T.unpack k) (T.unpack v)
 
 
 -------------------------------------------------------------------------------
 -- | Interpreted splice for an action log listing.
 actionLogISplices :: (HasActionLog n, MonadSnap n) => [(Text, I.Splice n)]
 actionLogISplices =
-    [ ("actionLogListing", actionsISplice)
-    , ("actionLogFilterForm", logFilterFormISplice)
+    [ ("actionDetails", actionDetailsISplice) 
+    , ("defaultActions", defaultActionsISplice) 
+    ]
+    ++ coupledISplices False mempty
+--    , ("actionLogIndexUrl", crudUrlISplice RIndex)
+--    , ("actionLogShowUrl", crudUrlISplice RShow)
+
+
+coupledISplices :: (HasActionLog m, MonadSnap m)
+                => Bool -> LogFilter -> [(Text, I.Splice m)]
+coupledISplices b f =
+    [ ("actionLogListing", actionLogListingISplice (runLogFilterForm b) f)
+    , ("actionLogFilterForm", logFilterFormISplice (runLogFilterForm b) f)
     ]
 
 
-actionsISplice :: (HasActionLog n, MonadSnap n) => I.Splice n
-actionsISplice = do
-    (_,r) <- lift $ runLogFilterForm Nothing
+actionDetailsISplice :: (HasActionLog n, MonadSnap n) => I.Splice n
+actionDetailsISplice = do
+    ma <- lift $ actionFromId
+    maybe (return []) (I.runChildrenWith . actionISplices) ma
+
+
+actionLogListingISplice :: HasActionLog m
+                        => (Maybe a -> m (t, Maybe LogFilter))
+                        -> LogFilter
+                        -> I.Splice m
+actionLogListingISplice form f = do
+    (_,r) <- lift $ form Nothing
     let filters = case r of
           Nothing -> []
-          Just lf -> mkFilters lf
+          Just lf -> mkFilters (f `mappend` lf)
     actions <- lift $ getTenantActions filters []
     I.mapSplices (I.runChildrenWith . actionISplices) actions
 
 
-actionISplices :: HasActionLog n => Entity LoggedAction -> [(Text, I.Splice n)]
+actionISplices :: HasActionLog m
+               => Entity LoggedAction
+               -> [(Text, I.Splice m)]
 actionISplices e = userNameSplice :
-    (loggedActionISplices (entityVal e) ++ alCustomISplices e)
+    (loggedActionISplices (entityVal e) ++
+     alCustomISplices e
+--     itemSplices (actionLogR :: HasHeist b => Resource b v ())
+--                 (DBId $ mkWord64 $ entityKey e)
+    )
   where
     userNameSplice = ("loggedActionUserName", I.textSplice =<< getName)
     getName = lift $ alGetName $ loggedActionUserId $ entityVal e
+
+
+defaultActionsCommon :: Monad m => HeistT n m LogFilter
+defaultActionsCommon = do
+    n <- getParamNode
+    return $ LogFilter
+        (R.fromText =<< X.getAttribute "uid" n)
+        (X.getAttribute "entity" n)
+        (R.fromText =<< X.getAttribute "entity-id" n)
+        (R.fromText =<< X.getAttribute "action" n)
+
+
+------------------------------------------------------------------------------
+-- | This is a splice that wraps both the action log filter form splice and
+-- the listing splice.  It handles greying out the appropriate form fields and
+-- limiting the things in the listing.
+defaultActionsISplice :: (MonadSnap m, HasActionLog m) => I.Splice m
+defaultActionsISplice = do
+    f <- defaultActionsCommon
+    I.runChildrenWith $ coupledISplices True f
 
 

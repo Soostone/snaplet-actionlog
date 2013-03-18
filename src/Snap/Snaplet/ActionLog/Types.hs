@@ -8,6 +8,8 @@ module Snap.Snaplet.ActionLog.Types where
 
 ------------------------------------------------------------------------------
 import           Blaze.ByteString.Builder
+import           Control.Monad
+import           Data.Readable
 import           Data.Text (Text)
 import           Data.Time
 import           Database.Persist
@@ -21,6 +23,11 @@ import           Snap.Restful
 import           Snap.Restful.TH
 import           Snap.Snaplet.Persistent
 ------------------------------------------------------------------------------
+
+
+------------------------------------------------------------------------------
+-- | Opaque data type holding any state needed by the action log snaplet.
+data ActionLog = ActionLog
 
 
 ------------------------------------------------------------------------------
@@ -130,6 +137,15 @@ instance Show ActionType where
     show CreateAction = "Create"
     show UpdateAction = "Update"
     show DeleteAction = "Delete"
+
+
+------------------------------------------------------------------------------
+-- | Use human readable names for the Show instance.
+instance Readable ActionType where
+    fromText "Create" = return CreateAction
+    fromText "Update" = return UpdateAction
+    fromText "Delete" = return DeleteAction
+    fromText _ = mzero
 
 
 ------------------------------------------------------------------------------

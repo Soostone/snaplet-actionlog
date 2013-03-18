@@ -6,3 +6,9 @@ LoggedAction
   action ActionType
   at UTCTime default=now()
 
+LoggedActionDetails
+  actionId LoggedActionId
+  fieldName Text
+  oldValue Text
+  newValue Text
+
