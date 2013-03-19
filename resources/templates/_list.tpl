@@ -11,7 +11,7 @@
   <tbody>
     <actionLogListing>
       <tr>
-        <td><a href="${actionlogItemShowUrl}"><loggedActionAt/></a></td>
+        <td><a href="${actionlogItemShowPath}"><loggedActionAt/></a></td>
         <td><loggedActionUserName/></td>
         <td><loggedActionEntityName/></td>
         <td><loggedActionEntityId/></td>
