@@ -150,26 +150,43 @@ actionLogSplices r =
     [ ("actionDetails", actionViewSplice r)
     , ("defaultActions", defaultActionsSplice r) 
     ]
-    ++ coupledSplices r False mempty
+    ++ applyDeferred (return mempty) (coupledSplices r False)
 
 
 coupledSplices :: (HasActionLog n, MonadSnap n)
-               => Resource -> Bool -> LogFilter -> [(Text, Splice n)]
-coupledSplices r b f =
-    [ ("actionLogListing", actionsSplice r (runLogFilterForm b) f)
-    , ("actionLogFilterForm", logFilterFormSplice (runLogFilterForm b) f)
+               => Resource -> Bool -> [(Text, Promise LogFilter -> Splice n)]
+coupledSplices r b =
+    [ ("actionLogListing", actionsSplice r (runLogFilterForm b))
+    , ("actionLogFilterForm", logFilterFormSplice (runLogFilterForm b))
     ]
+
+
+getFilterFunc :: Monad n => HeistT n IO (RuntimeSplice n LogFilter)
+getFilterFunc = do
+    n <- getParamNode
+    attrFunc <- runAttributesRaw $ X.elementAttrs n
+    return $ do
+        as <- attrFunc
+        return $ filterCommon as
+
+
+filterCommon :: [(Text, Text)] -> LogFilter
+filterCommon as =
+    LogFilter
+      (R.fromText =<< lookup "uid" as)
+      (lookup "entity" as)
+      (R.fromText =<< lookup "entity-id" as)
+      (R.fromText =<< lookup "action" as)
 
 
 ------------------------------------------------------------------------------
 -- | This is a splice that wraps both the action log filter form splice and
 -- the listing splice.  It handles greying out the appropriate form fields and
 -- limiting the things in the listing.
-defaultActionsSplice :: (MonadSnap m, HasActionLog m)
-                     => Resource -> Splice m
+defaultActionsSplice :: (MonadSnap m, HasActionLog m) => Resource -> Splice m
 defaultActionsSplice r = do
-    f <- defaultActionsCommon
-    withLocalSplices (coupledSplices r True f) [] runChildren
+    filterFunc <- getFilterFunc
+    withSplices runChildren (coupledSplices r True) filterFunc
 
 
 actionFromId :: (MonadSnap m, HasPersistPool m)
@@ -184,21 +201,29 @@ actionFromId = runMaybeT $ do
 
 actionViewSplice :: (HasActionLog n, MonadSnap n) => Resource -> Splice n
 actionViewSplice r = manyWithSplices runChildren (actionSplices r) $ do
-    ma <- actionFromId
+    ma <- lift actionFromId
     return $ maybe [] (:[]) ma
 
 
 actionsSplice :: HasActionLog n
               => Resource
               -> (Maybe a -> n (t, Maybe LogFilter))
-              -> LogFilter
+              -> Promise LogFilter
               -> Splice n
-actionsSplice res form f = manyWithSplices runChildren (actionSplices res) $ do
-    (_,r) <- form Nothing
+actionsSplice res form prom = manyWithSplices runChildren (actionSplices res) $ do
+    f <- getPromise prom
+    (_,r) <- lift $ form Nothing
     let filters = case r of
           Nothing -> []
           Just lf -> mkFilters (f `mappend` lf)
-    getTenantActions filters []
+    lift $ getTenantActions filters []
+
+
+applyDeferred :: Monad n
+              => RuntimeSplice n a
+              -> [(Text, Promise a -> Splice n)]
+              -> [(Text, Splice n)]
+applyDeferred m = applySnd m . mapSnd defer
 
 
 actionSplices :: HasActionLog n
@@ -224,10 +249,12 @@ runtimeToPromise f p = return $ yieldRuntime $ do
 -------------------------------------------------------------------------------
 logFilterFormSplice :: Monad m
                     => (Maybe a -> m (View Text, b))
-                    -> a
+                    -> Promise a
                     -> Splice m
-logFilterFormSplice form f =
-    formSplice' [] [] $ liftM fst $ form (Just f)
+logFilterFormSplice form prom =
+    formSplice [] [] $ do
+        f <- getPromise prom
+        lift $ liftM fst $ form (Just f)
 
 
 -------------------------------------------------------------------------------
@@ -334,16 +361,6 @@ actionISplices r e = userNameSplice :
     getName = lift $ alGetName $ loggedActionUserId $ entityVal e
 
 
-defaultActionsCommon :: Monad m => HeistT n m LogFilter
-defaultActionsCommon = do
-    n <- getParamNode
-    return $ LogFilter
-        (R.fromText =<< X.getAttribute "uid" n)
-        (X.getAttribute "entity" n)
-        (R.fromText =<< X.getAttribute "entity-id" n)
-        (R.fromText =<< X.getAttribute "action" n)
-
-
 ------------------------------------------------------------------------------
 -- | This is a splice that wraps both the action log filter form splice and
 -- the listing splice.  It handles greying out the appropriate form fields and
@@ -351,7 +368,8 @@ defaultActionsCommon = do
 defaultActionsISplice :: (MonadSnap m, HasActionLog m)
                       => Resource -> I.Splice m
 defaultActionsISplice r = do
-    f <- defaultActionsCommon
+    n <- getParamNode
+    let f = filterCommon $ X.elementAttrs n
     I.runChildrenWith $ coupledISplices r True f
 
 
