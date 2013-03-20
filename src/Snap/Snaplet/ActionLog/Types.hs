@@ -1,17 +1,27 @@
+{-# LANGUAGE BangPatterns              #-}
 {-# LANGUAGE EmptyDataDecls            #-}
 {-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE FlexibleInstances         #-}
 {-# LANGUAGE GADTs                     #-}
 {-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE TemplateHaskell           #-}
 {-# LANGUAGE TypeFamilies              #-}
+{-# LANGUAGE TypeSynonymInstances      #-}
+
 module Snap.Snaplet.ActionLog.Types where
 
 ------------------------------------------------------------------------------
 import           Blaze.ByteString.Builder
 import           Control.Monad
+import           Data.ByteString             (ByteString)
+import qualified Data.ByteString             as B
+import           Data.Int
 import           Data.Readable
 import           Data.Text (Text)
+import qualified Data.Text                   as T
+import           Data.Text.Encoding
 import           Data.Time
+import           Data.Word
 import           Database.Persist
 import           Database.Persist.EntityDef
 import           Database.Persist.Quasi
@@ -165,4 +175,81 @@ instance PrimSplice ActionType where
     iPrimSplice = iPrimShow
     cPrimSplice = cPrimShow
 
+
+------------------------------------------------------------------------------
+-- | To store deltas, you need to be able to get Text representations of each
+-- field.
+class DeltaField a where
+    toText :: a -> Text
+
+instance DeltaField ByteString where
+    toText = decodeUtf8
+
+instance DeltaField Text where
+    toText = id
+
+instance DeltaField String where
+    toText = toText . T.pack
+
+instance DeltaField Bool where
+    toText = toText . show
+
+instance DeltaField Int where
+    toText = toText . show
+
+instance DeltaField Int8 where
+    toText = toText . show
+
+instance DeltaField Int16 where
+    toText = toText . show
+
+instance DeltaField Int32 where
+    toText = toText . show
+
+instance DeltaField Int64 where
+    toText = toText . show
+
+instance DeltaField Integer where
+    toText = toText . show
+
+instance DeltaField Float where
+    toText = toText . show
+
+instance DeltaField Double where
+    toText = toText . show
+
+instance DeltaField Word where
+    toText = toText . show
+
+instance DeltaField Word8 where
+    toText = toText . show
+
+instance DeltaField Word16 where
+    toText = toText . show
+
+instance DeltaField Word32 where
+    toText = toText . show
+
+instance DeltaField Word64 where
+    toText = toText . show
+
+class CanDelta a where
+    deltaFields :: [(Text, a -> Text)]
+
+
+------------------------------------------------------------------------------
+-- | Calculates a list of fields that changed along with ByteString
+-- representations of their old and new values.
+getDeltas :: (CanDelta a) => a -> a -> [(Text, Text, Text)]
+getDeltas old new = do
+    func [] deltaFields
+  where
+    func !acc [] = acc
+    func !acc ((name, f):fs) = 
+        if oldField == newField
+          then func acc fs
+          else func ((name, oldField, newField):acc) fs
+      where
+        oldField = f old
+        newField = f new
 

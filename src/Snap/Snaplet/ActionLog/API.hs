@@ -7,6 +7,7 @@ module Snap.Snaplet.ActionLog.API where
 ------------------------------------------------------------------------------
 import           Control.Monad
 import           Data.Text (Text)
+import           Data.Text.Encoding
 import           Database.Persist
 import           Database.Persist.EntityDef
 import           Database.Persist.GenericSql
@@ -16,6 +17,22 @@ import           Database.Persist.Store
 import           Snap.Snaplet.Persistent
 ------------------------------------------------------------------------------
 import           Snap.Snaplet.ActionLog.Types
+
+
+------------------------------------------------------------------------------
+--                     Adding entries to the action log
+------------------------------------------------------------------------------
+
+
+------------------------------------------------------------------------------
+-- | Calculates a list of fields that changed along with ByteString
+-- representations of their old and new values.
+storeDeltas :: (HasPersistPool m, CanDelta a)
+            => LoggedActionId -> a -> a -> m ()
+storeDeltas aid old new = do
+    runPersist $ mapM_ ins $ getDeltas old new
+  where
+    ins (f,o,n) = insert $ LoggedActionDetails aid f o n
 
 
 ------------------------------------------------------------------------------
@@ -61,27 +78,50 @@ loggedInsert val = do
 
 ------------------------------------------------------------------------------
 -- | Performs a logged replace of a database record.
-loggedReplace :: ( HasActionLog m
+loggedReplace :: ( HasActionLog m, CanDelta a
                  , PersistEntity a, PersistEntityBackend a ~ SqlBackend)
               => Key a -> a -> m ()
-loggedReplace key val = do
-    let entityName = unHaskellName $ entityHaskell $ entityDef val
-    runPersist $ replace key val
+loggedReplace key new = do
+    old <- runPersist $ get key
+    maybe (return ()) (\o -> loggedReplace' key o new) old
+
+
+------------------------------------------------------------------------------
+-- | Performs a logged replace of a database record.
+loggedReplace' :: ( HasActionLog m, CanDelta a
+                  , PersistEntity a, PersistEntityBackend a ~ SqlBackend)
+               => Key a -> a -> a -> m ()
+loggedReplace' key old new = do
+    let entityName = unHaskellName $ entityHaskell $ entityDef new
+    runPersist $ replace key new
     let entityId = mkInt key
-    logAction entityName entityId UpdateAction
+    aid <- logAction entityName entityId UpdateAction
+    storeDeltas aid old new
     return ()
 
 
 ------------------------------------------------------------------------------
 -- | Performs a logged update of a database record.
-loggedUpdate :: ( HasActionLog m
+loggedUpdate :: ( HasActionLog m, CanDelta a
                 , PersistEntity a, PersistEntityBackend a ~ SqlBackend)
              => Key a -> [Update a] -> m ()
 loggedUpdate key updates = do
+    old <- runPersist $ get key
+    maybe (return ()) (\o -> loggedUpdate' key o updates) old
+
+
+------------------------------------------------------------------------------
+-- | Performs a logged update of a database record.
+loggedUpdate' :: ( HasActionLog m, CanDelta a
+                 , PersistEntity a, PersistEntityBackend a ~ SqlBackend)
+              => Key a -> a -> [Update a] -> m ()
+loggedUpdate' key old updates = do
     val <- runPersist $ updateGet key updates
+    new <- runPersist $ get key
     let entityName = unHaskellName $ entityHaskell $ entityDef val
     let entityId = mkInt key
-    logAction entityName entityId UpdateAction
+    aid <- logAction entityName entityId UpdateAction
+    maybe (return ()) (\n -> storeDeltas aid old n) new
     return ()
 
 
