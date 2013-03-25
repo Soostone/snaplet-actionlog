@@ -16,6 +16,10 @@ module Snap.Snaplet.ActionLog
   , ActionType(..)
   , actionToInt
   , intToAction
+  , DeltaField(..)
+  , CanDelta(..)
+  , storeDeltas
+  , getDeltas
 
   -- * Retrieving actions
   , getLoggedAction

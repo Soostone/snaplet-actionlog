@@ -25,4 +25,19 @@
     <a href="${actionLogIndexPath}" class="btn">Return To Listing</a>
   </div>
 
+  <table class="table table-striped">
+    <tr>
+      <th>Field</th>
+      <th>Old Value</th>
+      <th>New Value</th>
+    </tr>
+    <loggedActionDetails>
+      <tr>
+        <td><loggedActionDetailsFieldName/></td>
+        <td><loggedActionDetailsOldValue/></td>
+        <td><loggedActionDetailsNewValue/></td>
+      </tr>
+    <loggedActionDetails>
+  </table>
+
 </actionDetails>

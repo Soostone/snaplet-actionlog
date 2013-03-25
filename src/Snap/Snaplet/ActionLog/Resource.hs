@@ -229,16 +229,20 @@ applyDeferred m = applySnd m . mapSnd defer
 actionSplices :: HasActionLog n
               => Resource
               -> [(Text, Promise (Entity LoggedAction) -> Splice n)]
-actionSplices r = userNameSplice :
+actionSplices r =
+    ("loggedActionUserName", runtimeToPromise getName) :
+    ("loggedActionDetails", detailsSplice) :
     (pureSplices loggedActionCSplices ++
      alCustomCSplices ++
      repromise (return . DBId . mkWord64 . entityKey)
                (pureSplices $ textSplices $ itemCSplices r)
     )
   where
-    userNameSplice = ("loggedActionUserName", runtimeToPromise getName)
     getName = return . fromText <=< alGetName . loggedActionUserId . entityVal
-
+    detailsSplice prom =
+      manyWithSplices runChildren (pureSplices detailsCSplices)
+        (lift . getActionDetails . entityKey =<< getPromise prom)
+              
 
 runtimeToPromise :: (Monad n) => (t -> n Builder) -> Promise t -> Splice n
 runtimeToPromise f p = return $ yieldRuntime $ do

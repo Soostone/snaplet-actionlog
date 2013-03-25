@@ -32,7 +32,8 @@ storeDeltas :: (HasPersistPool m, CanDelta a)
 storeDeltas aid old new = do
     runPersist $ mapM_ ins $ getDeltas old new
   where
-    ins (f,o,n) = insert $ LoggedActionDetails aid f o n
+    ins (f,o,n) = insert $
+      LoggedActionDetails aid f (decodeUtf8 o) (decodeUtf8 n)
 
 
 ------------------------------------------------------------------------------
@@ -213,5 +214,14 @@ getTenantUids = do
     liftM (map unSingle) $ runPersist $ rawSql
       "SELECT DISTINCT user_id from logged_action WHERE tenant_id = ?;"
       [PersistInt64 $ fromIntegral tid]
+
+
+------------------------------------------------------------------------------
+-- | Gets a list of all uids for a specific tenant.
+getActionDetails :: (HasActionLog m)
+                 => LoggedActionId
+                 -> m [Entity LoggedActionDetails]
+getActionDetails aid = 
+    runPersist $ selectList [ LoggedActionDetailsActionId ==. aid ] []
 
 
