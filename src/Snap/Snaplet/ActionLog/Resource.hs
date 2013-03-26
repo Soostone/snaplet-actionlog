@@ -156,8 +156,8 @@ actionLogSplices r =
 coupledSplices :: (HasActionLog n, MonadSnap n)
                => Resource -> Bool -> [(Text, Promise LogFilter -> Splice n)]
 coupledSplices r b =
-    [ ("actionLogListing", actionsSplice r (runLogFilterForm b))
-    , ("actionLogFilterForm", logFilterFormSplice (runLogFilterForm b))
+    [ ("actionlogListing", actionsSplice r (runLogFilterForm b))
+    , ("actionlogFilterForm", logFilterFormSplice (runLogFilterForm b))
     ]
 
 
@@ -318,15 +318,13 @@ actionLogISplices r =
     , ("defaultActions", defaultActionsISplice r) 
     ]
     ++ coupledISplices r False mempty
---    , ("actionLogIndexUrl", crudUrlISplice RIndex)
---    , ("actionLogShowUrl", crudUrlISplice RShow)
 
 
 coupledISplices :: (HasActionLog m, MonadSnap m)
                 => Resource -> Bool -> LogFilter -> [(Text, I.Splice m)]
 coupledISplices r b f =
-    [ ("actionLogListing", actionLogListingISplice r (runLogFilterForm b) f)
-    , ("actionLogFilterForm", logFilterFormISplice (runLogFilterForm b) f)
+    [ ("actionlogListing", actionLogListingISplice r (runLogFilterForm b) f)
+    , ("actionlogFilterForm", logFilterFormISplice (runLogFilterForm b) f)
     ]
 
 
@@ -355,14 +353,18 @@ actionISplices :: HasActionLog m
                => Resource
                -> Entity LoggedAction
                -> [(Text, I.Splice m)]
-actionISplices r e = userNameSplice :
+actionISplices r e =
+    ("loggedActionUserName", I.textSplice =<< getName) :
+    ("loggedActionDetails", detailsISplice) :
     (loggedActionISplices (entityVal e) ++
      alCustomISplices e ++
      itemSplices r (DBId $ mkWord64 $ entityKey e)
     )
   where
-    userNameSplice = ("loggedActionUserName", I.textSplice =<< getName)
     getName = lift $ alGetName $ loggedActionUserId $ entityVal e
+    detailsISplice = do
+        ds <- lift $ getActionDetails $ entityKey e
+        I.mapSplices (I.runChildrenWith . detailsISplices . entityVal) ds
 
 
 ------------------------------------------------------------------------------

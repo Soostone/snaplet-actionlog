@@ -22,7 +22,7 @@
   </div>
 
   <div class="form-actions">
-    <a href="${actionLogIndexPath}" class="btn">Return To Listing</a>
+    <a href="${actionlogIndexPath}" class="btn">Return To Listing</a>
   </div>
 
   <table class="table table-striped">
@@ -37,7 +37,7 @@
         <td><loggedActionDetailsOldValue/></td>
         <td><loggedActionDetailsNewValue/></td>
       </tr>
-    <loggedActionDetails>
+    </loggedActionDetails>
   </table>
 
 </actionDetails>

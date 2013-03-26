@@ -9,7 +9,7 @@
     </tr>
   </thead>
   <tbody>
-    <actionLogListing>
+    <actionlogListing>
       <tr>
         <td><a href="${actionlogItemShowPath}"><loggedActionAt/></a></td>
         <td><loggedActionUserName/></td>
@@ -17,7 +17,7 @@
         <td><loggedActionEntityId/></td>
         <td><loggedActionAction/></td>
       </tr>
-    </actionLogListing>
+    </actionlogListing>
   </tbody>
 </table>
 

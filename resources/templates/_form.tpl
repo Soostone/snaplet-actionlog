@@ -1,4 +1,4 @@
-<actionLogFilterForm method="GET">
+<actionlogFilterForm method="GET">
   <dfErrorList ref=""/>
 
   <dfLabel ref="user">User</dfLabel>
@@ -22,4 +22,4 @@
   <br>
 
   <dfInputSubmit class="btn btn-success" value="Refresh"/>
-</actionLogFilterForm>
+</actionlogFilterForm>
