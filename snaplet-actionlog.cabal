@@ -36,6 +36,7 @@ Library
     Snap.Snaplet.ActionLog.API
     Snap.Snaplet.ActionLog.Resource
     Snap.Snaplet.ActionLog.Types
+    Snap.Snaplet.ActionLog.InternalTypes
     Paths_snaplet_actionlog
 
   build-depends:
