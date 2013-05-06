@@ -1,19 +1,17 @@
-{-# LANGUAGE DataKinds                 #-}
-{-# LANGUAGE OverloadedStrings         #-}
-{-# LANGUAGE TypeFamilies              #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
 
 module Snap.Snaplet.ActionLog.API where
 
 ------------------------------------------------------------------------------
 import           Control.Monad
-import           Data.Text (Text)
+import           Data.Functor.Identity
+import           Data.Text                    (Text)
 import           Data.Text.Encoding
 import           Database.Persist
-import           Database.Persist.EntityDef
-import           Database.Persist.GenericSql
-import           Database.Persist.GenericSql.Raw
-import           Database.Persist.Query.Internal
-import           Database.Persist.Store
+import           Database.Persist.Sql
 import           Snap.Snaplet.Persistent
 ------------------------------------------------------------------------------
 import           Snap.Snaplet.ActionLog.Types
@@ -66,11 +64,8 @@ logAction entityName entityId action = do
 ------------------------------------------------------------------------------
 -- | Performs a logged insert into the database.  Just about everything should
 -- be inserted using this function instead of @runPersist' . insert@
-loggedInsert :: ( HasActionLog m
-                , PersistEntity a , PersistEntityBackend a ~ SqlBackend)
-             => a -> m (Key a)
 loggedInsert val = do
-    let entityName = unHaskellName $ entityHaskell $ entityDef val
+    let entityName = getName val
     recKey <- runPersist $ insert val
     let entityId = mkInt recKey
     logAction entityName entityId CreateAction
@@ -79,9 +74,6 @@ loggedInsert val = do
 
 ------------------------------------------------------------------------------
 -- | Performs a logged replace of a database record.
-loggedReplace :: ( HasActionLog m, CanDelta a
-                 , PersistEntity a, PersistEntityBackend a ~ SqlBackend)
-              => Key a -> a -> m ()
 loggedReplace key new = do
     old <- runPersist $ get key
     maybe (return ()) (\o -> loggedReplace' key o new) old
@@ -89,11 +81,12 @@ loggedReplace key new = do
 
 ------------------------------------------------------------------------------
 -- | Performs a logged replace of a database record.
-loggedReplace' :: ( HasActionLog m, CanDelta a
-                  , PersistEntity a, PersistEntityBackend a ~ SqlBackend)
-               => Key a -> a -> a -> m ()
+loggedReplace'
+  :: (PersistEntity a, CanDelta a, HasActionLog m,
+      PersistEntityBackend a ~ SqlBackend) =>
+     Key a -> a -> a -> m ()
 loggedReplace' key old new = do
-    let entityName = unHaskellName $ entityHaskell $ entityDef new
+    let entityName = getName new
     runPersist $ replace key new
     let entityId = mkInt key
     aid <- logAction entityName entityId UpdateAction
@@ -103,9 +96,6 @@ loggedReplace' key old new = do
 
 ------------------------------------------------------------------------------
 -- | Performs a logged update of a database record.
-loggedUpdate :: ( HasActionLog m, CanDelta a
-                , PersistEntity a, PersistEntityBackend a ~ SqlBackend)
-             => Key a -> [Update a] -> m ()
 loggedUpdate key updates = do
     old <- runPersist $ get key
     maybe (return ()) (\o -> loggedUpdate' key o updates) old
@@ -113,13 +103,17 @@ loggedUpdate key updates = do
 
 ------------------------------------------------------------------------------
 -- | Performs a logged update of a database record.
-loggedUpdate' :: ( HasActionLog m, CanDelta a
-                 , PersistEntity a, PersistEntityBackend a ~ SqlBackend)
-              => Key a -> a -> [Update a] -> m ()
+loggedUpdate'
+    :: (PersistEntity a, CanDelta a, HasActionLog m,
+        PersistEntityBackend a ~ SqlBackend)
+    => Key a
+    -> a
+    -> [Update a]
+    -> m ()
 loggedUpdate' key old updates = do
     val <- runPersist $ updateGet key updates
     new <- runPersist $ get key
-    let entityName = unHaskellName $ entityHaskell $ entityDef val
+    let entityName = getName val
     let entityId = mkInt key
     aid <- logAction entityName entityId UpdateAction
     maybe (return ()) (\n -> storeDeltas aid old n) new
@@ -128,31 +122,38 @@ loggedUpdate' key old updates = do
 
 ------------------------------------------------------------------------------
 -- | Performs a logged delete of an entity in the database.
-loggedDelete :: ( HasActionLog m
-                , PersistEntity a, PersistEntityBackend a ~ SqlBackend)
-             => Entity a -> m ()
+loggedDelete
+    :: forall m a.
+       (HasActionLog m, PersistEntity a,
+        PersistEntityBackend a ~ SqlBackend)
+    => Entity a
+    -> m ()
 loggedDelete (Entity key val) = do
-    let entityName = unHaskellName $ entityHaskell $ entityDef val
     runPersist $ delete key
-    logAction entityName (mkInt key) DeleteAction
+    logAction (getName val) (mkInt key) DeleteAction
     return ()
 
 
 ------------------------------------------------------------------------------
 -- | Performs a logged delete of a key in the database.
-loggedDeleteKey :: ( HasActionLog m
-                   , PersistEntity a, PersistEntityBackend a ~ SqlBackend)
-                => Key a -> m ()
+loggedDeleteKey
+    :: (PersistEntity a, HasActionLog m,
+        PersistEntityBackend a ~ SqlBackend)
+     => Key a
+     -> m ()
 loggedDeleteKey key = do
     mval <- runPersist $ Database.Persist.get key
     case mval of
       Nothing -> return ()
-      Just val -> do
-          -- Only log an action if the value existed
-          let entityName = unHaskellName $ entityHaskell $ entityDef val
-          runPersist $ delete key
-          logAction entityName (mkInt key) DeleteAction
-          return ()
+      Just val -> loggedDelete (Entity key val)
+
+
+-- | Get human name for a database table defined to be an 'Entity'.
+getName :: forall a. PersistEntity a => a -> Text
+getName val = unHaskellName $ entityHaskell ed
+    where
+      ed = entityDef val'
+      val' = return val :: Identity a
 
 
 ------------------------------------------------------------------------------
@@ -221,7 +222,7 @@ getTenantUids = do
 getActionDetails :: (HasActionLog m)
                  => LoggedActionId
                  -> m [Entity LoggedActionDetails]
-getActionDetails aid = 
+getActionDetails aid =
     runPersist $ selectList [ LoggedActionDetailsActionId ==. aid ] []
 
 
