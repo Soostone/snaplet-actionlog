@@ -1,5 +1,5 @@
 name:           snaplet-actionlog
-version:        0.2
+version:        0.2.0.1
 synopsis:       Generic action log snaplet for the Snap Framework
 description:    This snaplet contains support for logging website actions.
                 Common actions are creating, updating, and deleting records.
