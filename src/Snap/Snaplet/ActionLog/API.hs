@@ -64,6 +64,9 @@ logAction entityName entityId action = do
 ------------------------------------------------------------------------------
 -- | Performs a logged insert into the database.  Just about everything should
 -- be inserted using this function instead of @runPersist' . insert@
+loggedInsert :: (PersistEntity a, HasActionLog m,
+                 PersistEntityBackend a ~ SqlBackend)
+             => a -> m (Key a)
 loggedInsert val = do
     let entityName = getName val
     recKey <- runPersist $ insert val
@@ -74,6 +77,9 @@ loggedInsert val = do
 
 ------------------------------------------------------------------------------
 -- | Performs a logged replace of a database record.
+loggedReplace :: (PersistEntity a, CanDelta a, HasActionLog m,
+                  PersistEntityBackend a ~ SqlBackend)
+              => Key a -> a -> m ()
 loggedReplace key new = do
     old <- runPersist $ get key
     maybe (return ()) (\o -> loggedReplace' key o new) old
@@ -96,6 +102,9 @@ loggedReplace' key old new = do
 
 ------------------------------------------------------------------------------
 -- | Performs a logged update of a database record.
+loggedUpdate :: (PersistEntity a, CanDelta a, HasActionLog m,
+                 PersistEntityBackend a ~ SqlBackend)
+             => Key a -> [Update a] -> m ()
 loggedUpdate key updates = do
     old <- runPersist $ get key
     maybe (return ()) (\o -> loggedUpdate' key o updates) old

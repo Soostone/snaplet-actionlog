@@ -230,7 +230,7 @@ actionSplices :: HasActionLog n
               => Resource
               -> [(Text, Promise (Entity LoggedAction) -> Splice n)]
 actionSplices r =
-    ("loggedActionUserName", runtimeToPromise getName) :
+    ("loggedActionUserName", runtimeToPromise getUserName) :
     ("loggedActionDetails", detailsSplice) :
     (pureSplices loggedActionCSplices ++
      alCustomCSplices ++
@@ -238,7 +238,7 @@ actionSplices r =
                (pureSplices $ textSplices $ itemCSplices r)
     )
   where
-    getName = return . fromText <=< alGetName . loggedActionUserId . entityVal
+    getUserName = return . fromText <=< alGetName . loggedActionUserId . entityVal
     detailsSplice prom =
       manyWithSplices runChildren (pureSplices detailsCSplices)
         (lift . getActionDetails . entityKey =<< getPromise prom)
@@ -354,14 +354,14 @@ actionISplices :: HasActionLog m
                -> Entity LoggedAction
                -> [(Text, I.Splice m)]
 actionISplices r e =
-    ("loggedActionUserName", I.textSplice =<< getName) :
+    ("loggedActionUserName", I.textSplice =<< getUserName) :
     ("loggedActionDetails", detailsISplice) :
     (loggedActionISplices (entityVal e) ++
      alCustomISplices e ++
      itemSplices r (DBId $ mkWord64 $ entityKey e)
     )
   where
-    getName = lift $ alGetName $ loggedActionUserId $ entityVal e
+    getUserName = lift $ alGetName $ loggedActionUserId $ entityVal e
     detailsISplice = do
         ds <- lift $ getActionDetails $ entityKey e
         I.mapSplices (I.runChildrenWith . detailsISplices . entityVal) ds

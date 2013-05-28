@@ -10,25 +10,12 @@
 module Snap.Snaplet.ActionLog.InternalTypes where
 
 ------------------------------------------------------------------------------
-import           Blaze.ByteString.Builder
 import           Control.Monad
-import           Data.ByteString          (ByteString)
-import           Data.Int
 import           Data.Readable
 import           Data.Text                (Text)
-import qualified Data.Text                as T
-import           Data.Text.Encoding
-import           Data.Time
-import           Data.Word
 import           Database.Persist
-import           Database.Persist.Quasi
 import           Database.Persist.Sql
-import           Database.Persist.TH
-import           Heist.Compiled
-import qualified Heist.Interpreted        as I
 import           Snap.Restful
-import           Snap.Restful.TH
-import           Snap.Snaplet.Persistent
 ------------------------------------------------------------------------------
 
 
