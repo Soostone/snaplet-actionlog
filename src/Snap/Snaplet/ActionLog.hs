@@ -86,8 +86,7 @@ initActionLog heist = makeSnaplet "actionlog" description datadir $ do
       -- Load time splices are for splices that can be used in the apply and
       -- bind tags.
       , hcLoadTimeSplices =
-          [ ("actionlogTemplate", I.textSplice $ decodeUtf8 url)
-          ]
+          "actionlogTemplate" ## I.textSplice (decodeUtf8 url)
       }
     addTemplates heist ""
     return ActionLog

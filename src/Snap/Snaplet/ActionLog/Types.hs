@@ -29,6 +29,7 @@ import           Data.Word
 import           Database.Persist
 import           Database.Persist.Quasi
 import           Database.Persist.TH
+import           Heist
 import           Heist.Compiled
 import qualified Heist.Interpreted                    as I
 import           Snap.Restful
@@ -59,19 +60,19 @@ share [mkPersist sqlSettings, mkMigrate "migrateActionLog"]
       $(persistFileWith lowerCaseSettings "schema.txt")
 
 
-loggedActionCSplices :: [(Text, Entity LoggedAction -> Builder)]
-loggedActionCSplices = mapSnd (. entityVal) $(cSplices ''LoggedAction)
+loggedActionCSplices :: Splices (Entity LoggedAction -> Builder)
+loggedActionCSplices = mapS (. entityVal) $(cSplices ''LoggedAction)
 
 
-loggedActionISplices :: Monad m => LoggedAction -> [(Text, I.Splice m)]
+loggedActionISplices :: Monad m => LoggedAction -> Splices (I.Splice m)
 loggedActionISplices = $(iSplices ''LoggedAction)
 
 
-detailsCSplices :: [(Text, Entity LoggedActionDetails -> Builder)]
-detailsCSplices = mapSnd (. entityVal) $(cSplices ''LoggedActionDetails)
+detailsCSplices :: Splices (Entity LoggedActionDetails -> Builder)
+detailsCSplices = mapS (. entityVal) $(cSplices ''LoggedActionDetails)
 
 
-detailsISplices :: Monad m => LoggedActionDetails -> [(Text, I.Splice m)]
+detailsISplices :: Monad m => LoggedActionDetails -> Splices (I.Splice m)
 detailsISplices = $(iSplices ''LoggedActionDetails)
 
 
@@ -119,11 +120,11 @@ class (HasPersistPool m) => HasActionLog m where
 
     -- | Complied version of any custom splices that you want to be available
     -- inside the @actionLogListing@ splice.
-    alCustomCSplices :: [(Text, Promise (Entity LoggedAction) -> Splice m)]
+    alCustomCSplices :: Splices (RuntimeSplice m (Entity LoggedAction) -> Splice m)
 
     -- | Interpreted version of any custom splices that you want to be
     -- available inside the @actionLogListing@ splice.
-    alCustomISplices :: Entity LoggedAction -> [(Text, I.Splice m)]
+    alCustomISplices :: Entity LoggedAction -> Splices (I.Splice m)
 
 
 
