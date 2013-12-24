@@ -1,5 +1,5 @@
 name:           snaplet-actionlog
-version:        0.2.0.2
+version:        0.2.1
 synopsis:       Generic action log snaplet for the Snap Framework
 description:    This snaplet contains support for logging website actions.
                 Common actions are creating, updating, and deleting records.
@@ -52,7 +52,7 @@ Library
     persistent-postgresql      >= 1.2     && < 1.3,
     persistent-template        >= 1.2     && < 1.3,
     readable                   >= 0.1     && < 0.2,
-    restful-snap               >= 0.1     && < 0.4,
+    restful-snap               >= 0.3.1   && < 0.4,
     snap                       >= 0.11.3  && < 0.14,
     snap-extras                >= 0.4     && < 0.9,
     snaplet-persistent         >= 0.2     && < 0.4,

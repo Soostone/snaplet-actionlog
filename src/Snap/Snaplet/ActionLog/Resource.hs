@@ -227,7 +227,7 @@ actionSplices :: HasActionLog n
 actionSplices r = mconcat
     [ mapS pureSplice loggedActionCSplices
     , alCustomCSplices
-    , mapS ( deferMap (return . DBId . mkWord64 . entityKey)
+    , mapS ( deferMap (return . Just . DBId . mkWord64 . entityKey)
            . pureSplice . textSplice) (itemCSplices r)
     , splices
     ]
