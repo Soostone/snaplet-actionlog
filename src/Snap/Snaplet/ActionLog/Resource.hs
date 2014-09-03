@@ -14,16 +14,16 @@ module Snap.Snaplet.ActionLog.Resource
 ------------------------------------------------------------------------------
 import           Blaze.ByteString.Builder.Char8
 import           Control.Error
-import           Data.ByteString                       (ByteString)
-import qualified Data.ByteString.Char8                 as B
+import           Data.ByteString                (ByteString)
+import qualified Data.ByteString.Char8          as B
 import           Data.Monoid
-import qualified Data.Readable                         as R
-import           Data.Text (Text)
-import qualified Data.Text                             as T
+import qualified Data.Readable                  as R
+import           Data.Text                      (Text)
+import qualified Data.Text                      as T
 import           Database.Persist
 import           Heist
 import           Heist.Compiled
-import qualified Heist.Interpreted                     as I
+import qualified Heist.Interpreted              as I
 import           Snap
 import           Snap.Restful
 import           Snap.Snaplet.ActionLog.API
@@ -31,12 +31,12 @@ import           Snap.Snaplet.ActionLog.Types
 import           Snap.Snaplet.Heist.Generic
 import           Snap.Snaplet.Persistent
 import           Text.Digestive
-import qualified Text.Digestive                        as Form
-import qualified Text.Digestive.Heist                  as DHI
+import qualified Text.Digestive                 as Form
+import qualified Text.Digestive.Heist           as DHI
 import           Text.Digestive.Heist.Compiled
-import           Text.Digestive.Snap                   hiding (method)
-import qualified Text.Digestive.Snap                   as Form
-import qualified Text.XmlHtml                          as X
+import           Text.Digestive.Snap            hiding (method)
+import qualified Text.Digestive.Snap            as Form
+import qualified Text.XmlHtml                   as X
 ------------------------------------------------------------------------------
 
 
@@ -97,7 +97,7 @@ disableOnJust f def = disable $ f def
 
 
 ------------------------------------------------------------------------------
--- | 
+-- |
 logFilterForm :: HasActionLog m
               => Bool
               -> Maybe LogFilter -> Form Text m LogFilter
@@ -242,7 +242,7 @@ actionSplices r = mconcat
     detailsSplice rt =
       manyWithSplices runChildren (mapS pureSplice detailsCSplices)
         (lift . getActionDetails . entityKey =<< rt)
-    
+
     getUserName :: HasActionLog n
                 => RuntimeSplice n (Entity LoggedAction)
                 -> Splice n
@@ -252,7 +252,7 @@ actionSplices r = mconcat
 
 
 -------------------------------------------------------------------------------
-logFilterFormSplice :: Monad m
+logFilterFormSplice :: MonadIO m
                     => (Maybe a -> m (View Text, b))
                     -> RuntimeSplice m a
                     -> Splice m
@@ -320,7 +320,7 @@ actionLogISplices r =
     splices = do
       "actionDetails" ## actionDetailsISplice r
       "defaultActions" ## defaultActionsISplice r
-    
+
 
 
 coupledISplices :: (HasActionLog m, MonadSnap m)
@@ -328,7 +328,7 @@ coupledISplices :: (HasActionLog m, MonadSnap m)
 coupledISplices r b f = do
     "actionlogListing" ## actionLogListingISplice r (runLogFilterForm b) f
     "actionlogFilterForm" ## logFilterFormISplice (runLogFilterForm b) f
-    
+
 
 
 actionDetailsISplice :: (HasActionLog n, MonadSnap n)
