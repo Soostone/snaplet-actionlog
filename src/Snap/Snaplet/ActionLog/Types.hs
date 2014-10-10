@@ -61,7 +61,7 @@ share [mkPersist sqlSettings, mkMigrate "migrateActionLog"]
 
 
 loggedActionCSplices :: Splices (Entity LoggedAction -> Builder)
-loggedActionCSplices = mapS (. entityVal) $(cSplices ''LoggedAction)
+loggedActionCSplices = mapV (. entityVal) $(cSplices ''LoggedAction)
 
 
 loggedActionISplices :: Monad m => LoggedAction -> Splices (I.Splice m)
@@ -69,7 +69,7 @@ loggedActionISplices = $(iSplices ''LoggedAction)
 
 
 detailsCSplices :: Splices (Entity LoggedActionDetails -> Builder)
-detailsCSplices = mapS (. entityVal) $(cSplices ''LoggedActionDetails)
+detailsCSplices = mapV (. entityVal) $(cSplices ''LoggedActionDetails)
 
 
 detailsISplices :: Monad m => LoggedActionDetails -> Splices (I.Splice m)

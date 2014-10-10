@@ -51,6 +51,7 @@ module Snap.Snaplet.ActionLog
   ) where
 
 ------------------------------------------------------------------------------
+import           Control.Lens
 import           Data.Monoid
 import           Data.Text.Encoding
 import           Heist
@@ -80,14 +81,11 @@ initActionLog heist = makeSnaplet "actionlog" description datadir $ do
       [(RIndex, indexH), (RShow, showH)] [] [] heist
 
     addConfig heist $ mempty
-      { hcCompiledSplices = actionLogSplices resource
-      , hcInterpretedSplices = actionLogISplices resource
-
+      & scCompiledSplices .~ actionLogSplices resource
+      & scInterpretedSplices .~ actionLogISplices resource
       -- Load time splices are for splices that can be used in the apply and
       -- bind tags.
-      , hcLoadTimeSplices =
-          "actionlogTemplate" ## I.textSplice (decodeUtf8 url)
-      }
+      & scLoadTimeSplices .~ ("actionlogTemplate" ## I.textSplice (decodeUtf8 url))
     addTemplates heist ""
     return ActionLog
   where

@@ -146,7 +146,7 @@ runLogFilterForm isDisabling def =
 actionLogSplices :: (HasActionLog n, MonadSnap n)
                  => Resource -> Splices (Splice n)
 actionLogSplices r = mconcat
-    [ applyS (return mempty) (coupledSplices r False)
+    [ mapV ($ mempty) (coupledSplices r False)
     , splices ]
   where
     splices = do
@@ -225,9 +225,9 @@ actionSplices :: HasActionLog n
               => Resource
               -> Splices (RuntimeSplice n (Entity LoggedAction) -> Splice n)
 actionSplices r = mconcat
-    [ mapS pureSplice loggedActionCSplices
+    [ mapV pureSplice loggedActionCSplices
     , alCustomCSplices
-    , mapS ( deferMap (return . Just . DBId . mkWord64 . entityKey)
+    , mapV ( deferMap (return . Just . DBId . mkWord64 . entityKey)
            . pureSplice . textSplice) (itemCSplices r)
     , splices
     ]
@@ -240,7 +240,7 @@ actionSplices r = mconcat
                   => RuntimeSplice n (Entity LoggedAction)
                   -> Splice n
     detailsSplice rt =
-      manyWithSplices runChildren (mapS pureSplice detailsCSplices)
+      manyWithSplices runChildren (mapV pureSplice detailsCSplices)
         (lift . getActionDetails . entityKey =<< rt)
 
     getUserName :: HasActionLog n
