@@ -1,12 +1,15 @@
-{-# LANGUAGE BangPatterns         #-}
-{-# LANGUAGE EmptyDataDecls       #-}
-{-# LANGUAGE FlexibleContexts     #-}
-{-# LANGUAGE FlexibleInstances    #-}
-{-# LANGUAGE GADTs                #-}
-{-# LANGUAGE OverloadedStrings    #-}
-{-# LANGUAGE TemplateHaskell      #-}
-{-# LANGUAGE TypeFamilies         #-}
-{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE BangPatterns               #-}
+{-# LANGUAGE EmptyDataDecls             #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GADTs                      #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
+{-# LANGUAGE UndecidableInstances       #-}
 
 module Snap.Snaplet.ActionLog.Types
     ( ActionLog (..)
@@ -28,6 +31,7 @@ import           Data.Time
 import           Data.Word
 import           Database.Persist
 import           Database.Persist.Quasi
+import           Database.Persist.Sql
 import           Database.Persist.TH
 import           Heist
 import           Heist.Compiled
@@ -52,7 +56,7 @@ import           Snap.Snaplet.ActionLog.InternalTypes
 -- > share [mkMigrate "migrateAll"] $
 -- >    actionLogEntityDefs ++
 -- >    $(persistFileWith lowerCaseSettings "schema.txt")
-actionLogEntityDefs :: [EntityDef SqlType]
+actionLogEntityDefs :: [EntityDef]
 actionLogEntityDefs = $(persistFileWith lowerCaseSettings "schema.txt")
 
 
@@ -189,7 +193,7 @@ instance DeltaField a => DeltaField (Maybe a) where
     toBS Nothing = "Nothing"
     toBS (Just a) = toBS a
 
-instance (b ~ PersistEntityBackend e) => DeltaField (KeyBackend b e) where
+instance (ToBackendKey SqlBackend e) => DeltaField (Key e) where
     toBS = toBS . mkInt
 
 class CanDelta a where

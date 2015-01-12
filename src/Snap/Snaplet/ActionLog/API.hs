@@ -1,7 +1,9 @@
-{-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module Snap.Snaplet.ActionLog.API where
 
@@ -15,6 +17,7 @@ import           Database.Persist.Sql
 import           Snap.Snaplet.Persistent
 ------------------------------------------------------------------------------
 import           Snap.Snaplet.ActionLog.Types
+-------------------------------------------------------------------------------
 
 
 ------------------------------------------------------------------------------
@@ -44,42 +47,47 @@ storeDeltas aid old new = do
 -- one of the other functions like 'loggedInsert'.  But when those aren't
 -- sufficient, this function provides you maximum control to log actions as
 -- you see fit.
-logAction :: HasActionLog m
-          => Text
-              -- ^ Entity name.  If you are logging database modifications,
-              -- then this might be the name of the table being operated on.
-          -> Int
-              -- ^ Entity ID.  This is the primary key for the affected row.
-          -> ActionType
-              -- ^ Type of action, such as create, update, or delete.
-          -> m (Key LoggedAction)
-logAction entityName entityId action = do
+logAction
+    :: HasActionLog m
+    => Text
+    -- ^ Entity name.  If you are logging database modifications,
+    -- then this might be the name of the table being operated on.
+    -> Int
+    -- ^ Entity ID.  This is the primary key for the affected row.
+    -> ActionType
+    -- ^ Type of action, such as create, update, or delete.
+    -> m (Key LoggedAction)
+logAction entityName eid action = do
     tid <- alGetTenantId
     uid <- alGetAuthUserId
     now <- alGetTime
     runPersist $ insert $
-      LoggedAction tid uid entityName entityId action now
+      LoggedAction tid uid entityName eid action now
 
 
 ------------------------------------------------------------------------------
 -- | Performs a logged insert into the database.  Just about everything should
 -- be inserted using this function instead of @runPersist' . insert@
-loggedInsert :: (PersistEntity a, HasActionLog m,
-                 PersistEntityBackend a ~ SqlBackend)
-             => a -> m (Key a)
+loggedInsert
+    :: ( PersistEntity a, HasActionLog m, ToBackendKey SqlBackend a
+       , PersistEntityBackend a ~ SqlBackend)
+    => a
+    -> m (Key a)
 loggedInsert val = do
     let entityName = getName val
     recKey <- runPersist $ insert val
-    let entityId = mkInt recKey
-    logAction entityName entityId CreateAction
+    let eid = mkInt recKey
+    logAction entityName eid CreateAction
     return recKey
 
 
 ------------------------------------------------------------------------------
 -- | Performs a logged replace of a database record.
-loggedReplace :: (PersistEntity a, CanDelta a, HasActionLog m,
-                  PersistEntityBackend a ~ SqlBackend)
-              => Key a -> a -> m ()
+loggedReplace
+    :: (PersistEntity a, CanDelta a, HasActionLog m,
+        ToBackendKey SqlBackend a,
+        PersistEntityBackend a ~ SqlBackend)
+    => Key a -> a -> m ()
 loggedReplace key new = do
     old <- runPersist $ get key
     maybe (return ()) (\o -> loggedReplace' key o new) old
@@ -89,21 +97,24 @@ loggedReplace key new = do
 -- | Performs a logged replace of a database record.
 loggedReplace'
   :: (PersistEntity a, CanDelta a, HasActionLog m,
+      ToBackendKey SqlBackend a,
       PersistEntityBackend a ~ SqlBackend) =>
      Key a -> a -> a -> m ()
 loggedReplace' key old new = do
     let entityName = getName new
     runPersist $ replace key new
-    let entityId = mkInt key
-    aid <- logAction entityName entityId UpdateAction
+    let eid = mkInt key
+    aid <- logAction entityName eid UpdateAction
     storeDeltas aid old new
     return ()
 
 
 ------------------------------------------------------------------------------
 -- | Performs a logged update of a database record.
-loggedUpdate :: (PersistEntity a, CanDelta a, HasActionLog m,
-                 PersistEntityBackend a ~ SqlBackend)
+loggedUpdate
+    :: (PersistEntity a, CanDelta a, HasActionLog m,
+        ToBackendKey SqlBackend a,
+        PersistEntityBackend a ~ SqlBackend)
              => Key a -> [Update a] -> m ()
 loggedUpdate key updates = do
     old <- runPersist $ get key
@@ -114,6 +125,7 @@ loggedUpdate key updates = do
 -- | Performs a logged update of a database record.
 loggedUpdate'
     :: (PersistEntity a, CanDelta a, HasActionLog m,
+        ToBackendKey SqlBackend a,
         PersistEntityBackend a ~ SqlBackend)
     => Key a
     -> a
@@ -123,8 +135,8 @@ loggedUpdate' key old updates = do
     val <- runPersist $ updateGet key updates
     new <- runPersist $ get key
     let entityName = getName val
-    let entityId = mkInt key
-    aid <- logAction entityName entityId UpdateAction
+    let eid = mkInt key
+    aid <- logAction entityName eid UpdateAction
     maybe (return ()) (\n -> storeDeltas aid old n) new
     return ()
 
@@ -134,6 +146,7 @@ loggedUpdate' key old updates = do
 loggedDelete
     :: forall m a.
        (HasActionLog m, PersistEntity a,
+        ToBackendKey SqlBackend a,
         PersistEntityBackend a ~ SqlBackend)
     => Entity a
     -> m ()
@@ -147,6 +160,7 @@ loggedDelete (Entity key val) = do
 -- | Performs a logged delete of a key in the database.
 loggedDeleteKey
     :: (PersistEntity a, HasActionLog m,
+        ToBackendKey SqlBackend a,
         PersistEntityBackend a ~ SqlBackend)
      => Key a
      -> m ()
@@ -181,9 +195,9 @@ getLoggedAction actionId = runPersist $ get actionId
 -- | Gets the LoggedAction entry for the specified entity and id.
 getEntityActions :: HasPersistPool m
                  => Text -> Int -> m [Entity LoggedAction]
-getEntityActions entityName entityId = runPersist $
+getEntityActions entityName eid = runPersist $
     selectList [ LoggedActionEntityName ==. entityName
-               , LoggedActionEntityId ==. entityId
+               , LoggedActionEntityId ==. eid
                ] []
 
 

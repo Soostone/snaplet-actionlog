@@ -41,11 +41,9 @@ module Snap.Snaplet.ActionLog
   -- * Types
   , actionLogEntityDefs
   , migrateActionLog
-  , LoggedActionGeneric(..)
-  , LoggedAction
+  , LoggedAction(..)
   , LoggedActionId
-  , LoggedActionDetailsGeneric(..)
-  , LoggedActionDetails
+  , LoggedActionDetails(..)
   , LoggedActionDetailsId
 
   ) where
@@ -55,15 +53,17 @@ import           Control.Lens
 import           Data.Monoid
 import           Data.Text.Encoding
 import           Heist
-import qualified Heist.Interpreted                     as I
+import qualified Heist.Interpreted               as I
 import           Snap
 import           Snap.Restful
 import           Snap.Snaplet.Heist.Compiled
 ------------------------------------------------------------------------------
+import           Paths_snaplet_actionlog
 import           Snap.Snaplet.ActionLog.API
 import           Snap.Snaplet.ActionLog.Resource
 import           Snap.Snaplet.ActionLog.Types
-import           Paths_snaplet_actionlog
+-------------------------------------------------------------------------------
+
 
 
 ------------------------------------------------------------------------------
