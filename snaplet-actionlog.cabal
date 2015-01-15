@@ -35,6 +35,7 @@ Library
   other-modules:
     Snap.Snaplet.ActionLog.API
     Snap.Snaplet.ActionLog.Resource
+    Snap.Snaplet.ActionLog.Schema
     Snap.Snaplet.ActionLog.Types
     Snap.Snaplet.ActionLog.InternalTypes
     Paths_snaplet_actionlog

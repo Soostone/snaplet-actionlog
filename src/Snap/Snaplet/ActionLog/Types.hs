@@ -10,7 +10,6 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
 {-# LANGUAGE UndecidableInstances       #-}
-
 module Snap.Snaplet.ActionLog.Types
     ( ActionLog (..)
     , ActionType (..)
@@ -18,6 +17,7 @@ module Snap.Snaplet.ActionLog.Types
     , intToAction
 
     , module Snap.Snaplet.ActionLog.Types
+    , module Snap.Snaplet.ActionLog.Schema
     ) where
 
 ------------------------------------------------------------------------------
@@ -38,6 +38,7 @@ import           Heist.Compiled
 import qualified Heist.Interpreted                    as I
 import           Snap.Restful
 import           Snap.Restful.TH
+import           Snap.Snaplet.ActionLog.Schema
 import           Snap.Snaplet.Persistent
 ------------------------------------------------------------------------------
 import           Snap.Snaplet.ActionLog.InternalTypes
@@ -58,10 +59,6 @@ import           Snap.Snaplet.ActionLog.InternalTypes
 -- >    $(persistFileWith lowerCaseSettings "schema.txt")
 actionLogEntityDefs :: [EntityDef]
 actionLogEntityDefs = $(persistFileWith lowerCaseSettings "schema.txt")
-
-
-share [mkPersist sqlSettings, mkMigrate "migrateActionLog"]
-      $(persistFileWith lowerCaseSettings "schema.txt")
 
 
 loggedActionCSplices :: Splices (Entity LoggedAction -> Builder)
