@@ -12,7 +12,7 @@ module Snap.Snaplet.ActionLog.InternalTypes where
 ------------------------------------------------------------------------------
 import           Control.Monad
 import           Data.Readable
-import           Data.Text                (Text)
+import           Data.Text            (Text)
 import           Database.Persist
 import           Database.Persist.Sql
 import           Snap.Restful

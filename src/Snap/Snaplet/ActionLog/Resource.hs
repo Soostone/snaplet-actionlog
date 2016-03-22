@@ -13,7 +13,11 @@ module Snap.Snaplet.ActionLog.Resource
 
 ------------------------------------------------------------------------------
 import           Blaze.ByteString.Builder.Char8
+import           Control.Applicative            as A
 import           Control.Error
+import           Control.Monad
+import           Control.Monad.IO.Class
+import           Control.Monad.Trans.Class
 import           Data.ByteString                (ByteString)
 import qualified Data.ByteString.Char8          as B
 import           Data.Monoid
@@ -108,7 +112,7 @@ logFilterForm isDisabling d = monadic $ do
     names <- mapM alGetName uids
     let userPairs = noFilter : (map firstJust $ zip uids names)
     return $ LogFilter
-      <$> "user"      .: choice userPairs ?$ (filterUser <$> d)
+      A.<$> "user"      .: choice userPairs ?$ (filterUser <$> d)
       <*> "entity"    .: choice entityPairs ?$ (filterEntity <$> d)
       <*> "entity-id" .: optionalStringRead "id must be an int" ?$
                                             (filterEntityId =<< d)

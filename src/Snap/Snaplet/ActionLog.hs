@@ -50,6 +50,7 @@ module Snap.Snaplet.ActionLog
 
 ------------------------------------------------------------------------------
 import           Control.Lens
+import           Control.Monad
 import           Data.Monoid
 import           Data.Text.Encoding
 import           Heist

@@ -18,50 +18,30 @@ module Snap.Snaplet.ActionLog.Types
     , intToAction
 
     , module Snap.Snaplet.ActionLog.Types
+    , module Snap.Snaplet.ActionLog.Internal.Schema
     ) where
 
 ------------------------------------------------------------------------------
 import           Blaze.ByteString.Builder
-import           Data.ByteString                      (ByteString)
+import           Data.ByteString                        (ByteString)
 import           Data.Int
-import           Data.Text                            (Text)
-import qualified Data.Text                            as T
+import           Data.Text                              (Text)
+import qualified Data.Text                              as T
 import           Data.Text.Encoding
 import           Data.Time
 import           Data.Word
 import           Database.Persist
-import           Database.Persist.Quasi
 import           Database.Persist.Sql
-import           Database.Persist.TH
 import           Heist
 import           Heist.Compiled
-import qualified Heist.Interpreted                    as I
+import qualified Heist.Interpreted                      as I
 import           Snap.Restful
 import           Snap.Restful.TH
 import           Snap.Snaplet.Persistent
 ------------------------------------------------------------------------------
+import           Snap.Snaplet.ActionLog.Internal.Schema
 import           Snap.Snaplet.ActionLog.InternalTypes
 -------------------------------------------------------------------------------
-
-
-
-------------------------------------------------------------------------------
--- | The list of entity definitions this snaplet exposes. You need them so
--- that you can append to your application's list of entity definitions and
--- perform the migration in one block.
---
--- Here's an example of how to combine your app's own entity definitions and
--- the action log's in one migration block:
---
--- > share [mkMigrate "migrateAll"] $
--- >    actionLogEntityDefs ++
--- >    $(persistFileWith lowerCaseSettings "schema.txt")
-actionLogEntityDefs :: [EntityDef]
-actionLogEntityDefs = $(persistFileWith lowerCaseSettings "schema.txt")
-
-
-share [mkPersist sqlSettings, mkMigrate "migrateActionLog"]
-      $(persistFileWith lowerCaseSettings "schema.txt")
 
 
 loggedActionCSplices :: Splices (Entity LoggedAction -> Builder)
