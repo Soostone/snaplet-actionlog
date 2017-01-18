@@ -20,6 +20,7 @@ import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Class
 import           Data.ByteString                (ByteString)
 import qualified Data.ByteString.Char8          as B
+import qualified Data.Map.Syntax                as MS
 import           Data.Monoid
 import qualified Data.Readable                  as R
 import           Data.Text                      (Text)
@@ -97,7 +98,7 @@ mkFilters (LogFilter u e eid a) =
 
 disableOnJust :: (Maybe a -> Form v m b) -> Maybe a -> Form v m b
 disableOnJust f Nothing = f Nothing
-disableOnJust f def = disable $ f def
+disableOnJust f def     = disable $ f def
 
 
 ------------------------------------------------------------------------------
@@ -150,12 +151,12 @@ runLogFilterForm isDisabling def =
 actionLogSplices :: (HasActionLog n, MonadSnap n)
                  => Resource -> Splices (Splice n)
 actionLogSplices r = mconcat
-    [ mapV ($ mempty) (coupledSplices r False)
+    [ MS.mapV ($ mempty) (coupledSplices r False)
     , splices ]
   where
     splices = do
-      "actionDetails" ## actionViewSplice r
-      "defaultActions" ## defaultActionsSplice r
+      "actionDetails" MS.## actionViewSplice r
+      "defaultActions" MS.## defaultActionsSplice r
 
 
 coupledSplices :: (HasActionLog n, MonadSnap n)
@@ -163,8 +164,8 @@ coupledSplices :: (HasActionLog n, MonadSnap n)
                -> Bool
                -> Splices (RuntimeSplice n LogFilter -> Splice n)
 coupledSplices r b = do
-    "actionlogListing" ## actionsSplice r (runLogFilterForm b)
-    "actionlogFilterForm" ## logFilterFormSplice (runLogFilterForm b)
+    "actionlogListing" MS.## actionsSplice r (runLogFilterForm b)
+    "actionlogFilterForm" MS.## logFilterFormSplice (runLogFilterForm b)
 
 
 getFilterFunc :: Monad n => HeistT n IO (RuntimeSplice n LogFilter)
@@ -229,22 +230,22 @@ actionSplices :: HasActionLog n
               => Resource
               -> Splices (RuntimeSplice n (Entity LoggedAction) -> Splice n)
 actionSplices r = mconcat
-    [ mapV pureSplice loggedActionCSplices
+    [ MS.mapV pureSplice loggedActionCSplices
     , alCustomCSplices
-    , mapV ( deferMap (return . Just . DBId . mkWord64 . entityKey)
+    , MS.mapV ( deferMap (return . Just . DBId . mkWord64 . entityKey)
            . pureSplice . textSplice) (itemCSplices r)
     , splices
     ]
   where
     splices = do
-      "loggedActionUserName" ## getUserName
-      "loggedActionDetails" ## detailsSplice
+      "loggedActionUserName" MS.## getUserName
+      "loggedActionDetails" MS.## detailsSplice
 
     detailsSplice :: HasActionLog n
                   => RuntimeSplice n (Entity LoggedAction)
                   -> Splice n
     detailsSplice rt =
-      manyWithSplices runChildren (mapV pureSplice detailsCSplices)
+      manyWithSplices runChildren (MS.mapV pureSplice detailsCSplices)
         (lift . getActionDetails . entityKey =<< rt)
 
     getUserName :: HasActionLog n
@@ -322,16 +323,16 @@ actionLogISplices r =
     splices `mappend` coupledISplices r False mempty
   where
     splices = do
-      "actionDetails" ## actionDetailsISplice r
-      "defaultActions" ## defaultActionsISplice r
+      "actionDetails" MS.## actionDetailsISplice r
+      "defaultActions" MS.## defaultActionsISplice r
 
 
 
 coupledISplices :: (HasActionLog m, MonadSnap m)
                 => Resource -> Bool -> LogFilter -> Splices (I.Splice m)
 coupledISplices r b f = do
-    "actionlogListing" ## actionLogListingISplice r (runLogFilterForm b) f
-    "actionlogFilterForm" ## logFilterFormISplice (runLogFilterForm b) f
+    "actionlogListing" MS.## actionLogListingISplice r (runLogFilterForm b) f
+    "actionlogFilterForm" MS.## logFilterFormISplice (runLogFilterForm b) f
 
 
 
@@ -368,8 +369,8 @@ actionISplices r e = mconcat
     ]
   where
     splices = do
-      "loggedActionUserName" ## I.textSplice =<< getUserName
-      "loggedActionDetails" ## detailsISplice
+      "loggedActionUserName" MS.## I.textSplice =<< getUserName
+      "loggedActionDetails" MS.## detailsISplice
     getUserName = lift $ alGetName $ loggedActionUserId $ entityVal e
     detailsISplice = do
         ds <- lift $ getActionDetails $ entityKey e

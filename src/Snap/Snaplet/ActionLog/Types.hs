@@ -1,4 +1,5 @@
 {-# LANGUAGE BangPatterns               #-}
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE EmptyDataDecls             #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
@@ -25,6 +26,9 @@ module Snap.Snaplet.ActionLog.Types
 import           Blaze.ByteString.Builder
 import           Data.ByteString                        (ByteString)
 import           Data.Int
+#if MIN_VERSION_heist(1,0,0)
+import           Data.Map.Syntax                        (mapV, ( ## ))
+#endif
 import           Data.Text                              (Text)
 import qualified Data.Text                              as T
 import           Data.Text.Encoding
@@ -170,7 +174,7 @@ instance DeltaField Word64 where
     toBS = toBS . show
 
 instance DeltaField a => DeltaField (Maybe a) where
-    toBS Nothing = "Nothing"
+    toBS Nothing  = "Nothing"
     toBS (Just a) = toBS a
 
 instance (ToBackendKey SqlBackend e) => DeltaField (Key e) where

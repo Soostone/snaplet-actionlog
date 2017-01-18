@@ -51,6 +51,7 @@ module Snap.Snaplet.ActionLog
 ------------------------------------------------------------------------------
 import           Control.Lens
 import           Control.Monad
+import qualified Data.Map.Syntax                 as MS
 import           Data.Monoid
 import           Data.Text.Encoding
 import           Heist
@@ -86,7 +87,7 @@ initActionLog heist = makeSnaplet "actionlog" description datadir $ do
       & scInterpretedSplices .~ actionLogISplices resource
       -- Load time splices are for splices that can be used in the apply and
       -- bind tags.
-      & scLoadTimeSplices .~ ("actionlogTemplate" ## I.textSplice (decodeUtf8 url))
+      & scLoadTimeSplices .~ ("actionlogTemplate" MS.## I.textSplice (decodeUtf8 url))
     addTemplates heist ""
     return ActionLog
   where
