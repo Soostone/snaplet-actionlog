@@ -1,5 +1,5 @@
 name:           snaplet-actionlog
-version:        0.3.0
+version:        0.3.1
 synopsis:       Generic action log snaplet for the Snap Framework
 description:    This snaplet contains support for logging website actions.
                 Common actions are creating, updating, and deleting records.
@@ -12,7 +12,9 @@ cabal-version:  >= 1.6
 homepage:       https://github.com/soostone/snaplet-actionlog
 category:       Web, Snap
 
-extra-source-files:  LICENSE
+extra-source-files:
+  LICENSE
+  changelog.md
 
 data-files:
   schema.txt
