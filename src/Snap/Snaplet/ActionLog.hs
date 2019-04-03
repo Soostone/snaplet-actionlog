@@ -52,7 +52,7 @@ module Snap.Snaplet.ActionLog
 import           Control.Lens
 import           Control.Monad
 import qualified Data.Map.Syntax                 as MS
-import           Data.Monoid
+import           Data.Monoid                     as Monoid
 import           Data.Text.Encoding
 import           Heist
 import qualified Heist.Interpreted               as I
@@ -82,7 +82,7 @@ initActionLog heist = makeSnaplet "actionlog" description datadir $ do
     addResourceRelative resource
       [(RIndex, indexH), (RShow, showH)] [] [] heist
 
-    addConfig heist $ mempty
+    addConfig heist $ Monoid.mempty
       & scCompiledSplices .~ actionLogSplices resource
       & scInterpretedSplices .~ actionLogISplices resource
       -- Load time splices are for splices that can be used in the apply and

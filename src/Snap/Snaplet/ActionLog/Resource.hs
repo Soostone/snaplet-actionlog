@@ -21,8 +21,9 @@ import           Control.Monad.Trans.Class
 import           Data.ByteString                (ByteString)
 import qualified Data.ByteString.Char8          as B
 import qualified Data.Map.Syntax                as MS
-import           Data.Monoid
+import           Data.Monoid                    as Monoid
 import qualified Data.Readable                  as R
+import           Data.Semigroup                 as Semigroup
 import           Data.Text                      (Text)
 import qualified Data.Text                      as T
 import           Database.Persist
@@ -79,13 +80,18 @@ data LogFilter = LogFilter
     } deriving (Show)
 
 
-instance Monoid LogFilter where
+instance Semigroup LogFilter where
+  (LogFilter u1 e1 i1 a1) <> (LogFilter u2 e2 i2 a2) =
+    LogFilter
+      (Semigroup.getFirst $ (Semigroup.First u1) <> (Semigroup.First u2))
+      (Semigroup.getFirst $ (Semigroup.First e1) <> (Semigroup.First e2))
+      (Semigroup.getFirst $ (Semigroup.First i1) <> (Semigroup.First i2))
+      (Semigroup.getFirst $ (Semigroup.First a1) <> (Semigroup.First a2))
+
+
+instance Monoid.Monoid LogFilter where
     mempty = LogFilter Nothing Nothing Nothing Nothing
-    mappend (LogFilter u1 e1 i1 a1) (LogFilter u2 e2 i2 a2) =
-      LogFilter (getFirst $ mappend (First u1) (First u2))
-                (getFirst $ mappend (First e1) (First e2))
-                (getFirst $ mappend (First i1) (First i2))
-                (getFirst $ mappend (First a1) (First a2))
+    mappend = (<>)
 
 
 mkFilters :: LogFilter -> [Filter LoggedAction]
@@ -387,5 +393,3 @@ defaultActionsISplice r = do
     n <- getParamNode
     let f = filterCommon $ X.elementAttrs n
     I.runChildrenWith $ coupledISplices r True f
-
-
