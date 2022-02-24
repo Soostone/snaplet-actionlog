@@ -83,15 +83,15 @@ data LogFilter = LogFilter
 instance Semigroup LogFilter where
   (LogFilter u1 e1 i1 a1) <> (LogFilter u2 e2 i2 a2) =
     LogFilter
-      (Semigroup.getFirst $ (Semigroup.First u1) <> (Semigroup.First u2))
-      (Semigroup.getFirst $ (Semigroup.First e1) <> (Semigroup.First e2))
-      (Semigroup.getFirst $ (Semigroup.First i1) <> (Semigroup.First i2))
-      (Semigroup.getFirst $ (Semigroup.First a1) <> (Semigroup.First a2))
+      (Semigroup.getFirst $ (Semigroup.First u1) Semigroup.<> (Semigroup.First u2))
+      (Semigroup.getFirst $ (Semigroup.First e1) Semigroup.<> (Semigroup.First e2))
+      (Semigroup.getFirst $ (Semigroup.First i1) Semigroup.<> (Semigroup.First i2))
+      (Semigroup.getFirst $ (Semigroup.First a1) Semigroup.<> (Semigroup.First a2))
 
 
 instance Monoid.Monoid LogFilter where
     mempty = LogFilter Nothing Nothing Nothing Nothing
-    mappend = (<>)
+    mappend = (Semigroup.<>)
 
 
 mkFilters :: LogFilter -> [Filter LoggedAction]
