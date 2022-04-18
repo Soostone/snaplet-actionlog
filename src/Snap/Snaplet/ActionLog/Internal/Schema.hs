@@ -17,6 +17,7 @@ import           Data.Text                            (Text)
 import           Data.Time
 import           Database.Persist
 import           Database.Persist.Quasi
+import           Database.Persist.Quasi.Internal
 import           Database.Persist.TH
 -------------------------------------------------------------------------------
 import           Snap.Snaplet.ActionLog.InternalTypes
@@ -35,7 +36,7 @@ import           Snap.Snaplet.ActionLog.InternalTypes
 -- > share [mkMigrate "migrateAll"] $
 -- >    actionLogEntityDefs ++
 -- >    $(persistFileWith lowerCaseSettings "schema.txt")
-actionLogEntityDefs :: [EntityDef]
+actionLogEntityDefs :: [UnboundEntityDef]
 actionLogEntityDefs = $(persistFileWith lowerCaseSettings "schema.txt")
 
 
