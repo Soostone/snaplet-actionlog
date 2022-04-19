@@ -5,96 +5,75 @@
 
 packages:
 - completed:
-    hackage: digestive-functors-0.8.3.0@sha256:090895c10f8a20ed834b89bb8ac6aa9512367b614a06316bf6dcd2f0ab6c165a,3041
+    hackage: digestive-functors-0.8.4.2@sha256:badff1797b6dcd860a48ed4558985b2f6bec501e1016fa5afd9d7d6b0d8e4c08,3364
     pantry-tree:
       size: 1682
-      sha256: 2f1a567ce6b73f0c8b31f4ea297f2b102107c96e8167a6ed68e0702d1c469b4e
+      sha256: 53ce82c7f0c60c10009b1b764b537117a4ab402bbe1a147fba5ad2263acb3025
   original:
-    hackage: digestive-functors-0.8.3.0
+    hackage: digestive-functors-0.8.4.2
 - completed:
-    hackage: digestive-functors-heist-0.8.8.0@sha256:c901a1f550cc8a4b25cf369ec09af016bb2667dae04af2ae067e18474d7b97bf,998
+    hackage: digestive-functors-heist-0.8.8.1@sha256:03b92ba8eac9b4d23f3a8ea4c18192210d54b80b89d03a35f35dd88f95d40ad9,1022
     pantry-tree:
-      size: 362
-      sha256: 8e894ec6b6f2cf8e1db1ba870d89ffbac77646b819aaf2ee868a289e51686ca6
+      size: 363
+      sha256: dd290c3116a3d1f5f6d8e9fd695af4a340dadf20d9041891c7a043da9fe2c9bf
   original:
-    hackage: digestive-functors-heist-0.8.8.0
+    hackage: digestive-functors-heist-0.8.8.1
 - completed:
-    hackage: digestive-functors-snap-0.7.0.0@sha256:33d2eb11ffb19d236516b6dd47135cd4b9af99aaac3d1aee47a8a5c6123bf90e,953
+    hackage: digestive-functors-snap-0.7.0.1@sha256:76632b9e741a32c30f64abd1242c76997c02e78b095ca793e67765079a91896d,980
     pantry-tree:
       size: 233
-      sha256: 1b15e9cb9496c6ddad4364a6fdd9ce8b5e052e3e54954cad1e1e1b067c8c3590
+      sha256: 752eb38747a768136c6769b4e602c941a6ebda57ab1461801fe79f463000cfcb
   original:
-    hackage: digestive-functors-snap-0.7.0.0
+    hackage: digestive-functors-snap-0.7.0.1
 - completed:
-    hackage: persistent-2.7.3.1@sha256:17d22865f87a9b864e64f8bcbda88237ac28be6b48d44b358171239998548c79,5243
+    hackage: heist-1.1.0.1@sha256:121288965f6c77b0d06a09c5d8a3b80f9a083830d06857555e99f10868b18dcb,9311
     pantry-tree:
-      size: 2164
-      sha256: 52201e624c073471bd3f358263fd69529c22d93e53ff0e8ce495355e1477786a
+      size: 7354
+      sha256: 7144a2b1802790977bfbd30ea14ceca59d42107cf5d5b6f2806191e4d01edba5
   original:
-    hackage: persistent-2.7.3.1
+    hackage: heist-1.1.0.1
 - completed:
-    hackage: persistent-postgresql-2.6.3@sha256:c0a76adc717c771fe9dfc75c7eb1afd0943fe2165cc2e8d7b5d13e922f43f449,1627
+    hackage: jmacro-0.6.17@sha256:3a1e6ae8e1c3f8d9984036f27b2207f532655f93740e0c90b253dcace33c9679,2901
     pantry-tree:
-      size: 292
-      sha256: 4ec3cf773573b8d36ad258bfddd8020fa4860b3254c7c1394f7522d870f68601
+      size: 919
+      sha256: 00a46e94050d54f8d05b3e22a47bb938adbc68ffe68306d6ee6938ec2cafbdfa
   original:
-    hackage: persistent-postgresql-2.6.3
+    hackage: jmacro-0.6.17
 - completed:
-    hackage: snap-1.0.0.2@sha256:c1af0aaaf45fd6bd66542a6a143bef7d7eff5f746c0b9d2f16d3756d0425c4b5,8997
+    hackage: lift-type-0.1.0.1@sha256:6e38e49bf086fd2203346417d96ad2e6c300d8d8f41d222780abdccc7a4e451b,1106
     pantry-tree:
-      size: 5743
-      sha256: 349074e419d7c131ce7450cf8effa3e39997db2a3758ab43d88b97aa3aeea2c8
+      size: 361
+      sha256: 9de4bdc6ce32b78c28b4bce75b5b2e488bf0f875a136ae269a02df804eb94a1a
   original:
-    hackage: snap-1.0.0.2
+    hackage: lift-type-0.1.0.1
 - completed:
-    hackage: snaplet-persistent-0.6.0@sha256:bfa135d0273ff5f693f4e6eb67df42d7c21fdad90975052c0b96f2a58d66cf33,2410
+    hackage: map-syntax-0.3@sha256:9b92c51bcaf1d55f60f8aaef9a96adb29acb77112631fa4110fd5dcae54be7a6,2420
     pantry-tree:
-      size: 636
-      sha256: 6a73690908c3d403f733d8de0078f52500b7f6c02aff05cb29c069f6965bd05b
+      size: 558
+      sha256: bed5e77f083feeda1c13daf961d29ca1fbe96b7a87302c416fb1122a99d779cb
   original:
-    hackage: snaplet-persistent-0.6.0
+    hackage: map-syntax-0.3
 - completed:
-    hackage: snap-extras-0.12.2.0@sha256:a0a41b361a08d521a4011546b44837fd0eeabb2d5105063df7d0487616a9c62b,3878
+    hackage: persistent-2.13.3.5@sha256:d975675d29ce57299ee4aae01fb12d46d9d6154e31d3d2cb54e742a12721daf4,6979
     pantry-tree:
-      size: 1967
-      sha256: c951e5746c166f3d2ac5e8ca07888c73146232008685aa106df34d35ec77ff03
+      size: 6427
+      sha256: 198fc80d0a88f9a99e75122f1423d2612c5e0656af15362748d02693bf7b4456
   original:
-    hackage: snap-extras-0.12.2.0
+    hackage: persistent-2.13.3.5
 - completed:
-    hackage: conduit-1.2.13.1@sha256:afd4db7fe66ae7af3d418e1a932384a8dee08df2f6299cca80e53ba964ce1228,4371
+    hackage: persistent-postgresql-2.13.5.0@sha256:4ec08fd2f30b42800b8b622d322f3c5f54d263b5b668adae5aa7a6c8388c041c,3686
     pantry-tree:
-      size: 1191
-      sha256: c24b0058c187a98780d227072cb701efeca1571c1c88ca331e53799cc3d051fb
+      size: 1140
+      sha256: c93bcd46cdefde16d368d9e5f9ad98c7b3adea6b05c3a6c4f9a897553a036f3f
   original:
-    hackage: conduit-1.2.13.1
+    hackage: persistent-postgresql-2.13.5.0
 - completed:
-    hackage: conduit-extra-1.2.3.2@sha256:911f76ce00b87a44ed5205b092b6150f456062e8f833c645b09c9357d986c854,4793
+    hackage: pwstore-fast-2.4.4@sha256:9b6a37510d8b9f37f409a8ab3babac9181afcaaa3fce8ba1c131a7ed3de30698,1351
     pantry-tree:
-      size: 2396
-      sha256: f968c54ae1b4cd25eb5b189341c6cc1c63e69892ad21a13c93da41238964f2ec
+      size: 270
+      sha256: ff4a44ede62515efe5cd366a5803f7183c811c4a0cf56eea88da94181c4844c0
   original:
-    hackage: conduit-extra-1.2.3.2
-- completed:
-    hackage: lens-4.15.4@sha256:9df0c7a8f5f566a616e5b3d1aaede3a90d00d99fc77ed7f50d5f4608470affb0,15181
-    pantry-tree:
-      size: 7713
-      sha256: 3a1c9cb154c49a49a73003c0cc6475186ce6bc309f0fbbc2953a0bd4c717bea9
-  original:
-    hackage: lens-4.15.4
-- completed:
-    hackage: free-4.12.4@sha256:c014d770f289f8afa7a4b7ff167dda84b8b4c341ab5c76088538735d575ab13e,3371
-    pantry-tree:
-      size: 2812
-      sha256: 44382c6d6cd9ac6df5a259ddf5e9b2d2a2c0f7b8a1aff5596ab62dabb85626d6
-  original:
-    hackage: free-4.12.4
-- completed:
-    hackage: resourcet-1.1.11@sha256:6c16ce2485e4368048ee618f36bd8606aff8212100333d834b205b14cb4c6023,1981
-    pantry-tree:
-      size: 647
-      sha256: a20624ee1b2369b258059674aa9dac02e0e3b5a076fe08aa1417dd4788247498
-  original:
-    hackage: resourcet-1.1.11
+    hackage: pwstore-fast-2.4.4
 - completed:
     hackage: restful-snap-0.4.1@sha256:84299a8ae37e17614f7094bef4cb313b9d570996809f970279d568cec7e0043e,1543
     pantry-tree:
@@ -102,9 +81,41 @@ packages:
       sha256: a886b2b3826894970553b7cff6f42c1cd9004fba8f7f61ab2b57d35f40c3b49c
   original:
     hackage: restful-snap-0.4.1
+- completed:
+    hackage: snap-1.1.3.1@sha256:ad589f2838a10bde793150e113c147996ba9dc8b522f34d1eb3297493c8d2672,8901
+    pantry-tree:
+      size: 5743
+      sha256: f301fd1bf3e0f249892764e04f5b4db6bc39a05e2323236f0b3f1cdcf1ace053
+  original:
+    hackage: snap-1.1.3.1
+- completed:
+    hackage: snap-extras-0.12.3.0@sha256:3e874918cd39037e6b5f640a0260c74af7583eaf11f34bb8bed85ca21ebf2308,3597
+    pantry-tree:
+      size: 1967
+      sha256: 025a93fd25b102f9f833b6c8f68cc0ac6aa86dc5cc426717bd401ca285230cdd
+  original:
+    hackage: snap-extras-0.12.3.0
+- completed:
+    hackage: xmlhtml-0.2.5.2@sha256:3f0990f725551985d777e8edb5563fe99aee998f1fde6a7633f720f76df54701,46997
+    pantry-tree:
+      size: 61835
+      sha256: bb1bd95db3738e18d112bbc9724510ee64a51b7eda61494507f4957c5e2281f6
+  original:
+    hackage: xmlhtml-0.2.5.2
+- completed:
+    size: 9520
+    url: https://github.com/maksar/snaplet-persistent/archive/50a4c95f55c508248646715810b70bffcc790349.tar.gz
+    name: snaplet-persistent
+    version: 0.6.1
+    sha256: 6c713d4a035c964a153ca2b713c6712f94cc5f1e0a463ca13eaa7e3ac1f6cfb5
+    pantry-tree:
+      size: 937
+      sha256: 993573c4f130ced2a57f2111cd53f72034681b39b49b27bccf26585aaf3b1b6a
+  original:
+    url: https://github.com/maksar/snaplet-persistent/archive/50a4c95f55c508248646715810b70bffcc790349.tar.gz
 snapshots:
 - completed:
-    size: 527401
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/11/16.yaml
-    sha256: 0542b8cfae985550e2f7fdc4ccd0ca8358630a92a93ebc44df0d2ac69a255bf0
-  original: lts-11.16
+    size: 524996
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/14/27.yaml
+    sha256: 7ea31a280c56bf36ff591a7397cc384d0dff622e7f9e4225b47d8980f019a0f0
+  original: lts-14.27

@@ -9,12 +9,10 @@ module Snap.Snaplet.ActionLog.API where
 
 ------------------------------------------------------------------------------
 import           Control.Monad
-import           Data.Functor.Identity
 import           Data.Text                    (Text)
 import           Data.Text.Encoding
 import           Database.Persist
 import           Database.Persist.Sql
-import           Database.Persist.EntityDef
 import           Snap.Snaplet.Persistent
 import           Data.Proxy
 ------------------------------------------------------------------------------
@@ -175,7 +173,7 @@ loggedDeleteKey key = do
 
 -- | Get human name for a database table defined to be an 'Entity'.
 getName :: forall a. PersistEntity a => a -> Text
-getName _val = unEntityNameHS $ getEntityHaskellName $ entityDef $ (Proxy :: Proxy a)
+getName _ = unEntityNameHS $ getEntityHaskellName $ entityDef $ (Proxy :: Proxy a)
 
 
 ------------------------------------------------------------------------------
