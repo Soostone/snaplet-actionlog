@@ -96,23 +96,19 @@ packages:
   original:
     hackage: snap-extras-0.12.3.0
 - completed:
+    hackage: snaplet-persistent-0.7.1@sha256:08c2a0f4ad3bedd2a517e24dc913ac6c25e05b70a1fe297176265e35a188e2b9,2159
+    pantry-tree:
+      size: 638
+      sha256: 2db938f409e3b9c9d223c7eec7d676202d68b3a5addc7b67ff85b05c70f64168
+  original:
+    hackage: snaplet-persistent-0.7.1
+- completed:
     hackage: xmlhtml-0.2.5.2@sha256:3f0990f725551985d777e8edb5563fe99aee998f1fde6a7633f720f76df54701,46997
     pantry-tree:
       size: 61835
       sha256: bb1bd95db3738e18d112bbc9724510ee64a51b7eda61494507f4957c5e2281f6
   original:
     hackage: xmlhtml-0.2.5.2
-- completed:
-    size: 9520
-    url: https://github.com/maksar/snaplet-persistent/archive/50a4c95f55c508248646715810b70bffcc790349.tar.gz
-    name: snaplet-persistent
-    version: 0.6.1
-    sha256: 6c713d4a035c964a153ca2b713c6712f94cc5f1e0a463ca13eaa7e3ac1f6cfb5
-    pantry-tree:
-      size: 937
-      sha256: 993573c4f130ced2a57f2111cd53f72034681b39b49b27bccf26585aaf3b1b6a
-  original:
-    url: https://github.com/maksar/snaplet-persistent/archive/50a4c95f55c508248646715810b70bffcc790349.tar.gz
 snapshots:
 - completed:
     size: 524996
