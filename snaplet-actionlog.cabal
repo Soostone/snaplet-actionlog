@@ -52,7 +52,7 @@ Library
     digestive-functors-snap    >= 0.6,
     errors                     >= 2.0,
     heist                      >= 0.14,
-    lens                       < 5,
+    lens                       < 6,
     map-syntax,
     persistent                 >= 2.13,
     persistent-postgresql      >= 2.13,
