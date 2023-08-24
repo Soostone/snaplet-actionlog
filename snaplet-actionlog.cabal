@@ -54,7 +54,7 @@ Library
     heist                      >= 0.14,
     lens                       < 6,
     map-syntax,
-    persistent                 >= 2.13,
+    persistent                 >= 2.14,
     persistent-postgresql      >= 2.13,
     readable                   >= 0.1,
     restful-snap               >= 0.4,

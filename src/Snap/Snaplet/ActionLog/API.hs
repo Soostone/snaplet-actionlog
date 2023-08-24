@@ -70,7 +70,7 @@ logAction entityName eid action = do
 -- be inserted using this function instead of @runPersist' . insert@
 loggedInsert
     :: ( PersistEntity a, HasActionLog m, ToBackendKey SqlBackend a
-       , PersistEntityBackend a ~ SqlBackend)
+       , PersistEntityBackend a ~ SqlBackend, SafeToInsert a)
     => a
     -> m (Key a)
 loggedInsert val = do
